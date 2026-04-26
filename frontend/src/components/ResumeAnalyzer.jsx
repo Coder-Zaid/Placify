@@ -27,7 +27,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     reader.readAsDataURL(file)
   }, [updateData, addToast])
 
-  // --- THE NEW FAST LOGIC (OFFLINE) ENGINE ---
+  // --- THE NEW FAST LOGIC (OFFLINE) ENGINE (FIXED) ---
   const handleOfflineAnalyze = useCallback(async () => {
     updateData({ error: '' })
 
@@ -45,7 +45,8 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     try {
       const response = await axios.post('http://localhost:8000/analyze/resume/offline', {
         jd_text: jdText,
-        resume_base64: resumeBase64
+        resume_base64: resumeBase64,
+        api_key: apiKey || "offline_dummy_key" // FIX 1: Satisfy FastAPI's strict Pydantic model
       })
       
       updateData({ results: response.data })
@@ -58,14 +59,30 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
       })
     } catch (err) {
       console.error('[ResumeAnalyzer] Offline Error:', err)
-      const errorDetail = err.response?.data?.detail || "Offline engine failed. Ensure backend offline route is running."
+      
+      // FIX 2: Defensive UI Error Handling (Prevent White Screen of Death)
+      let errorDetail = "Offline engine failed. Ensure backend offline route is running."
+      
+      if (err.response?.data?.detail) {
+        // If FastAPI sends back an array of validation objects, extract the text safely
+        if (Array.isArray(err.response.data.detail)) {
+          errorDetail = err.response.data.detail.map(d => `${d.loc?.join('.') || 'Field'}: ${d.msg}`).join(' | ')
+        } else if (typeof err.response.data.detail === 'string') {
+          errorDetail = err.response.data.detail
+        } else {
+          errorDetail = JSON.stringify(err.response.data.detail)
+        }
+      } else if (err.message) {
+        errorDetail = err.message
+      }
+
       updateData({ error: errorDetail })
-      addToast(errorDetail, { type: 'error', title: 'Offline Error', duration: 5000 })
+      addToast("Analysis failed", { type: 'error', title: 'Offline Error', duration: 5000 })
     } finally {
       updateData({ isLoading: false })
       setIsAnalyzing(false)
     }
-  }, [jdText, resumeBase64, updateData, addToast])
+  }, [jdText, resumeBase64, apiKey, updateData, addToast])
 
   // --- THE OLD AI ENGINE (Currently Rate Limited) ---
   const handleAnalyze = useCallback(async () => {
