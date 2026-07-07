@@ -89,3 +89,4 @@ class ResumeAnalysisResponse(BaseModel):
     strengths: List[str]
     gaps: List[str]
     detailed_feedback: str
+    pillar_breakdown: Optional[PillarBreakdown] = None

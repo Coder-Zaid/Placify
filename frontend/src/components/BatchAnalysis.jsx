@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react'
-import { Upload, Loader, Download, AlertCircle, Info, Clock } from 'lucide-react'
+import { Upload, Loader, Download, AlertCircle, Info, Clock, Zap } from 'lucide-react'
 import axios from 'axios'
 import Results from './Results'
 
@@ -53,6 +53,83 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleOfflineBatch = async () => {
+    updateData({ error: '' })
+
+    if (!jdText.trim()) {
+      const err = 'Please enter a job description'
+      updateData({ error: err })
+      addToast(err, { type: 'error', title: 'Missing Input', duration: 4000 })
+      return
+    }
+
+    if (!csvText.trim()) {
+      const err = 'Please upload a CSV file with student data'
+      updateData({ error: err })
+      addToast(err, { type: 'error', title: 'Missing CSV', duration: 4000 })
+      return
+    }
+
+    // Calculate ETA: faster than AI (no 8s throttle needed for offline)
+    const lines = csvText.split('\n').filter(line => line.trim())
+    const rowCount = Math.max(0, lines.length - 1)
+    const estimatedSeconds = Math.max(5, rowCount * 2)  // Offline is ~2s per student
+    
+    setTotalTime(estimatedSeconds)
+    setTimeLeft(estimatedSeconds)
+
+    updateData({ isLoading: true, results: null })
+    console.log('[BatchAnalysis] Starting OFFLINE analysis...')
+
+    try {
+      console.log('[BatchAnalysis] Sending request to /analyze/batch/offline...')
+      const response = await axios.post('http://localhost:8000/analyze/batch/offline', {
+        jd_text: jdText,
+        csv_data: csvText,
+        api_key: 'offline_dummy_key' // Offline doesn't need real key
+      })
+      
+      console.log('[BatchAnalysis] Response received:', response.status, response.data)
+      
+      if (!response.data || !response.data.results) {
+        console.error('[BatchAnalysis] Invalid response format:', response.data)
+        const err = 'Backend returned invalid response format. Check console logs.'
+        updateData({ error: err })
+        addToast(err, { type: 'error', title: 'Invalid Response', duration: 4000 })
+        return
+      }
+      
+      updateData({ results: response.data })
+      console.log('[BatchAnalysis] ✅ Offline analysis complete:', response.data.results.length, 'results')
+      
+      // Show success toast
+      addToast(`Fast Logic Complete! ${response.data.results.length} students scored instantly.`, {
+        type: 'success',
+        title: '⚡ Instant Report Generated!',
+        duration: 4000
+      })
+    } catch (err) {
+      console.error('[BatchAnalysis] Offline Error:', err)
+      console.error('[BatchAnalysis] Error response:', err.response?.data)
+      
+      const errorDetail = err.response?.data?.detail || err.message || 'Unknown error'
+      const errorStr = errorDetail.toString().toLowerCase()
+      
+      let friendlyError = errorDetail
+      if (err.code === 'ERR_NETWORK') {
+        friendlyError = "Cannot connect to backend. Make sure the backend server is running on http://localhost:8000"
+      } else if (!err.response) {
+        friendlyError = `Network error: ${err.message}. Is the backend running?`
+      }
+      
+      updateData({ error: friendlyError || 'Offline analysis failed. Please try again.' })
+      addToast(friendlyError, { type: 'error', title: 'Offline Error', duration: 5000 })
+    } finally {
+      updateData({ isLoading: false })
+      setTimeLeft(0)
+    }
   }
 
   const handleAnalyze = async () => {
@@ -255,6 +332,15 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
             ) : (
               'Run AI Deep Analysis'
             )}
+          </button>
+
+          <button
+            onClick={handleOfflineBatch}
+            disabled={isLoading}
+            className="px-6 py-2 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg"
+          >
+            <Zap className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            Run Fast Logic (Offline)
           </button>
 
           {results && (

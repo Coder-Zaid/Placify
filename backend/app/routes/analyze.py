@@ -1038,6 +1038,7 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     
     A rigorous, deterministic scoring system that bypasses AI completely.
     Uses keyword-based classification and proven weight formulas for Track A & B.
+    Returns individual pillar scores that map to the 6-pillar breakdown.
     
     Args:
         student_text: Student/resume text content (skills, branch, etc.)
@@ -1045,12 +1046,13 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
         student_data: Optional dict with 'cgpa' and 'active_backlogs' (Track A)
     
     Returns:
-        Dict with:
-            - readiness_score: 0-100 integer
+        Dict with PillarBreakdown and metadata:
+            - pillar_breakdown: Dict with skills, academics, corporate_readiness, aptitude, portfolio, ai_growth
+            - readiness_score: 0-100 integer (weighted sum of pillars)
             - growth_potential: 5-15 points above readiness
             - tier: "Qualified" / "Potential" / "Needs Training"
             - ai_insight: Structured evaluation string
-            - missing: List of unmatched keywords (CRITICAL: use key "missing", NOT "missing_skills")
+            - missing: List of unmatched keywords
             - jd_type: "Track A (Service-Based)" or "Track B (Product-Based)"
             - track_classification: Internal flag for which formula used
     """
@@ -1088,7 +1090,11 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     # ========================================================================
     
     # TRACK A: Service-based organizations
-    # Focuses on: Aptitude/Academic foundation, Core Programming, Communication, Corporate Readiness
+    # PILLAR MAPPING:
+    #   - academic_aptitude keywords → academics pillar (30%)
+    #   - core_programming keywords → skills pillar (30%)
+    #   - communication keywords → aptitude pillar (20%)
+    #   - corporate_readiness keywords → corporate_readiness pillar (20%)
     track_a_keywords = {
         'academic_aptitude': [
             'cgpa', 'gpa', 'backlogs', 'academic', 'sem', 'semester',
@@ -1109,7 +1115,11 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     }
     
     # TRACK B: Product-based/innovative organizations
-    # Focuses on: DSA mastery, Proof of Work, Core CS, System Design
+    # PILLAR MAPPING:
+    #   - dsa keywords → skills pillar (40%)
+    #   - proof_of_work keywords → portfolio pillar (30%)
+    #   - core_cs keywords → academics pillar (20%)
+    #   - system_design keywords → corporate_readiness pillar (10%)
     track_b_keywords = {
         'dsa': [
             'dsa', 'algorithm', 'complexity', 'time complexity', 'space complexity',
@@ -1136,7 +1146,7 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     student_text_lower = student_text.lower()
     
     # ========================================================================
-    # STEP C: UNIVERSAL MATH FORMULAS (Exact Weights Required)
+    # STEP C: CALCULATE COVERAGE FOR EACH CATEGORY
     # ========================================================================
     
     def calc_keyword_coverage(keywords_dict: dict) -> dict:
@@ -1151,58 +1161,53 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
             coverage[category] = matched / total if total > 0 else 0
         return coverage
     
+    keyword_dict = track_a_keywords if is_track_a else track_b_keywords
+    coverage = calc_keyword_coverage(keyword_dict)
+    
+    # ========================================================================
+    # STEP D: MAP COVERAGE TO PILLARS WITH WEIGHTS
+    # ========================================================================
+    
     if is_track_a:
-        # TRACK A FORMULA (Service-Based)
-        # (30% Academic/Aptitude) + (30% Core Programming) + (20% Communication) + (20% Corporate Readiness)
+        # TRACK A FORMULA (Service-Based): 30% skills + 30% academics + 20% corporate_readiness + 20% aptitude
+        # Calculate pillar scores based on coverage (0-1 scale) × weight
+        p_skills = coverage.get('core_programming', 0) * 30    
+        p_academic = coverage.get('academic_aptitude', 0) * 30
+        p_corporate = coverage.get('corporate_readiness', 0) * 20
+        p_aptitude = coverage.get('communication', 0) * 20
+        p_portfolio = 0.0  # Track A doesn't emphasize portfolio
         
-        coverage = calc_keyword_coverage(track_a_keywords)
-        
-        academic_component = coverage.get('academic_aptitude', 0) * 30
-        programming_component = coverage.get('core_programming', 0) * 30
-        communication_component = coverage.get('communication', 0) * 20
-        corporate_component = coverage.get('corporate_readiness', 0) * 20
-        
-        readiness_score = (
-            academic_component +
-            programming_component +
-            communication_component +
-            corporate_component
-        )
+        # Initial readiness score from pillars
+        readiness_score = p_skills + p_academic + p_corporate + p_aptitude
         
         # CRITICAL RULE: Active backlogs > 0 → instant 25-point deduction
         if student_data and student_data.get('active_backlogs', 0) > 0:
             print(f"[OFFLINE] Backlog penalty applied: {student_data.get('active_backlogs')} backlogs found")
             readiness_score = max(0, readiness_score - 25)
         
-        print(f"[OFFLINE] Track A Scoring: Academic={academic_component:.1f} + Programming={programming_component:.1f} + "
-              f"Communication={communication_component:.1f} + Corporate={corporate_component:.1f} = {readiness_score:.1f}")
+        print(f"[OFFLINE] Track A Pillars: Skills={p_skills:.1f} + Academics={p_academic:.1f} + "
+              f"Corporate={p_corporate:.1f} + Aptitude={p_aptitude:.1f} = {readiness_score:.1f}")
         
     else:
-        # TRACK B FORMULA (Product-Based)
-        # (40% DSA) + (30% Proof of Work) + (20% Core CS) + (10% System Design)
+        # TRACK B FORMULA (Product-Based): 40% skills + 30% portfolio + 20% academics + 10% corporate_readiness
+        # Calculate pillar scores based on coverage (0-1 scale) × weight
+        p_skills = coverage.get('dsa', 0) * 40
+        p_portfolio = coverage.get('proof_of_work', 0) * 30
+        p_academic = coverage.get('core_cs', 0) * 20
+        p_corporate = coverage.get('system_design', 0) * 10
+        p_aptitude = 0.0  # Track B doesn't emphasize aptitude
         
-        coverage = calc_keyword_coverage(track_b_keywords)
+        # Initial readiness score from pillars
+        readiness_score = p_skills + p_portfolio + p_academic + p_corporate
         
-        dsa_component = coverage.get('dsa', 0) * 40
-        pow_component = coverage.get('proof_of_work', 0) * 30
-        cs_component = coverage.get('core_cs', 0) * 20
-        design_component = coverage.get('system_design', 0) * 10
-        
-        readiness_score = (
-            dsa_component +
-            pow_component +
-            cs_component +
-            design_component
-        )
-        
-        print(f"[OFFLINE] Track B Scoring: DSA={dsa_component:.1f} + PoW={pow_component:.1f} + "
-              f"CS={cs_component:.1f} + Design={design_component:.1f} = {readiness_score:.1f}")
+        print(f"[OFFLINE] Track B Pillars: Skills={p_skills:.1f} + Portfolio={p_portfolio:.1f} + "
+              f"Academics={p_academic:.1f} + Corporate={p_corporate:.1f} = {readiness_score:.1f}")
     
     # Clamp to 0-100 range
     readiness_score = float(max(0, min(100, readiness_score)))
     
     # ========================================================================
-    # STEP D: CONSTRUCT RESULT
+    # STEP E: GROWTH POTENTIAL AND TIER
     # ========================================================================
     
     # Convert to integer for final score
@@ -1211,6 +1216,9 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     # Growth Potential: 5-15 points higher than readiness (varies by track strength)
     growth_delta = min(15, max(5, int(readiness_score / 10)))  # Scales with confidence
     growth_potential = min(100, final_score + growth_delta)
+    
+    # Pillar ai_growth represents growth potential scaled to a 0-15 range
+    pillar_ai_growth = round(float(growth_potential), 1)
     
     # Determine tier based on score
     if final_score >= 70:
@@ -1241,7 +1249,6 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     # Find missing keywords
     # CRITICAL: Assign to key "missing" (NOT "missing_skills") to avoid NameError in architecture
     all_keywords = []
-    keyword_dict = track_a_keywords if is_track_a else track_b_keywords
     for category_keywords in keyword_dict.values():
         all_keywords.extend(category_keywords)
     
@@ -1249,12 +1256,111 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
     missing = list(dict.fromkeys(missing))  # Remove duplicates, preserve order
     missing = missing[:10]  # Top 10 unique missing skills
     
+    # ========================================================================
+    # STEP G: GENERATE PREMIUM FORMATTED GAP DESCRIPTIONS
+    # ========================================================================
+    
+    # Map keywords to user-friendly gap descriptions (professional, pillar-aware)
+    gap_descriptions = {
+        # CORE PROGRAMMING (Pillar 1: Skills)
+        'python': 'Missing core Python programming skills - critical for backend development',
+        'java': 'Missing Java expertise - essential for enterprise backend development',
+        'c++': 'Missing C++ systems programming - required for performance-critical systems',
+        'c#': 'Missing C# and .NET framework experience - needed for Microsoft stack roles',
+        'sql': 'Missing SQL expertise - core skill for database design and optimization',
+        'javascript': 'Missing JavaScript proficiency - essential for full-stack development',
+        'react': 'Missing React.js framework experience - in-demand for modern web development',
+        'angular': 'Missing Angular framework skills - required for enterprise frontend roles',
+        'typescript': 'Missing TypeScript proficiency - increasingly required in modern stacks',
+        'node.js': 'Missing Node.js backend experience - critical for JavaScript-based services',
+        'golang': 'Missing Go programming skills - needed for cloud-native and microservices',
+        'rust': 'Missing Rust systems programming knowledge - required for performance optimization',
+        
+        # ALGORITHMS & DATA STRUCTURES (Pillar 1: Skills)
+        'dsa': 'Missing core Data Structures and Algorithms knowledge - essential for technical interviews',
+        'algorithm': 'Missing algorithmic problem-solving abilities - critical for product-based roles',
+        'leetcode': 'Missing competitive programming experience - important for technical assessments',
+        
+        # ACADEMICS & FUNDAMENTALS (Pillar 2: Academics)
+        'os': 'Missing Operating Systems fundamentals - core CS concept',
+        'dbms': 'Missing Database Management Systems knowledge - fundamental for data handling',
+        'networks': 'Missing networking concepts - essential for distributed systems',
+        'tcp': 'Missing TCP/IP protocol understanding - required for network architecture',
+        'http': 'Missing HTTP protocol knowledge - fundamental for web development',
+        'relational': 'Missing relational database concepts - critical for data modeling',
+        
+        # CORPORATE READINESS (Pillar 3: Corporate Readiness)
+        'git': 'Missing Git version control expertise - essential for team collaboration',
+        'github': 'Missing GitHub portfolio presence - important for demonstrating project work',
+        'docker': 'Missing containerization with Docker - core DevOps skill',
+        'aws': 'Missing AWS cloud infrastructure knowledge - increasingly required in modern roles',
+        'azure': 'Missing Microsoft Azure experience - essential for enterprise cloud deployments',
+        'agile': 'Missing Agile development methodology knowledge - required for modern teams',
+        'scrum': 'Missing Scrum and sprint management practices - essential for team workflows',
+        'devops': 'Missing core Corporate Readiness signals like DevOps CI/CD pipeline skills',
+        'ci/cd': 'Missing CI/CD automation expertise - critical for continuous integration workflows',
+        'jenkins': 'Missing Jenkins CI/CD automation skills - required for build pipeline management',
+        'jira': 'Missing JIRA project tracking experience - essential for agile team coordination',
+        'sdlc': 'Missing Software Development Lifecycle process understanding - core corporate skill',
+        
+        # SYSTEM DESIGN & ARCHITECTURE (Pillar 3: Corporate Readiness)
+        'system design': 'Missing scalable system architecture design knowledge - required for senior roles',
+        'microservice': 'Missing microservices architecture understanding - modern system design pattern',
+        'api': 'Missing API design and implementation experience',
+        'rest': 'Missing RESTful API design principles - foundational for web services',
+        'graphql': 'Missing GraphQL query language expertise - modern alternative to REST',
+        'design pattern': 'Missing software design pattern knowledge - essential for clean architecture',
+        'distributed': 'Missing distributed systems understanding - critical for scaling',
+        
+        # QUALITY ASSURANCE (Pillar 3: Corporate Readiness)
+        'testing': 'Missing software testing and QA practices - essential for code quality',
+        'selenium': 'Missing Selenium automation testing skills - required for QA roles',
+        
+        # PORTFOLIO & PROJECT WORK (Pillar 5: Portfolio)
+        'deployed': 'Missing evidence of deployed production projects - critical for product roles',
+        'production': 'Missing real-world production deployment experience - key for commercial projects',
+        'github repository': 'Missing GitHub repository with substantial project contributions',
+        'open source': 'Missing open source contributions - valuable for demonstrating skills',
+        
+        # ADVANCED CONCEPTS
+        'kubernetes': 'Missing Kubernetes container orchestration expertise - required for enterprise DevOps',
+        'machine learning': 'Missing machine learning implementation skills - required for ML engineer roles',
+        'tensorflow': 'Missing TensorFlow deep learning framework experience',
+        'spark': 'Missing Apache Spark big data processing knowledge',
+        'hadoop': 'Missing Hadoop ecosystem expertise - required for big data roles',
+    }
+    
+    # Generate formatted gaps list with premium descriptions
+    gaps_list = []
+    for keyword in missing[:5]:  # Top 5 missing skills
+        if keyword in gap_descriptions:
+            gaps_list.append(gap_descriptions[keyword])
+        else:
+            # Dynamic formatting for unknown keywords with professional context
+            formatted = keyword.replace('_', ' ').replace('-', ' ').title()
+            gaps_list.append(f'Missing core expertise in {formatted} - important for this role')
+    
+    # ========================================================================
+    # STEP H: BUILD PILLAR BREAKDOWN
+    # ========================================================================
+    
+    pillar_breakdown = {
+        'skills': round(p_skills, 1),
+        'academics': round(p_academic, 1),
+        'corporate_readiness': round(p_corporate, 1),
+        'aptitude': round(p_aptitude, 1),
+        'portfolio': round(p_portfolio, 1),
+        'ai_growth': 0.0  # Always 0 for offline
+    }
+    
     return {
+        'pillar_breakdown': pillar_breakdown,
         'readiness_score': final_score,
         'growth_potential': growth_potential,
         'tier': tier,
         'ai_insight': ai_insight,
         'missing': missing,
+        'gaps_list': gaps_list,
         'jd_type': track_type,
         'track_classification': 'Track A' if is_track_a else 'Track B'
     }
@@ -1267,13 +1373,18 @@ def offline_heuristic_engine(student_text: str, jd_text: str, student_data: dict
 @router.post("/batch/offline")
 async def analyze_batch_offline(request: BatchAnalysisRequest):
     """
-    Lightning-fast OFFLINE batch analysis using heuristic engine.
-    NO AI calls. Pure mathematical scoring (Track A vs Track B).
+    OFFLINE batch analysis using modular pillar functions (NO AI calls).
+    
+    Uses same exact pillar calculation functions as AI endpoint:
+    - check_hard_gates, calculate_pillar_1_skills, calculate_pillar_2_academics
+    - calculate_corporate_readiness, calculate_aptitude_pillar, calculate_pillar_5_portfolio
+    
+    Hardcodes ai_growth to 0 (no LLM evaluation for offline).
     
     Returns exact same StudentAnalysisResult structure as AI endpoints.
     Frontend can use responses interchangeably.
     
-    CSV must have columns: Name, Roll_Number, CGPA, Technical_Skills, Active_Backlogs (optional)
+    CSV must have columns: Name, Roll_Number, CGPA, Technical_Skills, Active_Backlogs (optional), Has_Portfolio (optional), Aptitude_Score (optional)
     """
     try:
         print(f"[BATCH-OFFLINE] ====== Starting OFFLINE batch analysis (NO AI CALLS) ======")
@@ -1287,105 +1398,188 @@ async def analyze_batch_offline(request: BatchAnalysisRequest):
             print(f"[BATCH-OFFLINE] CSV parsing error: {str(csv_error)}")
             raise HTTPException(status_code=400, detail=f"Invalid CSV format: {str(csv_error)}")
         
-        # Phase 0: Extract JD Intelligence (same as LLM endpoint for consistency)
+        # Phase 0: Extract JD Intelligence
         print(f"[BATCH-OFFLINE] Phase 0: Extracting JD intelligence...")
         combined_skill_set, jd_type, jd_type_description = extract_jd_intelligence(request.jd_text)
         print(f"[BATCH-OFFLINE] JD Type: {jd_type}, Combined skills extracted: {len(combined_skill_set)}")
         
-        # Run offline heuristic for each student
+        # Get adaptive weights
+        weight_dict = get_adaptive_weights(jd_type)
+        total_weight = sum([weight_dict['skills'], weight_dict['academic'], weight_dict['corporate'], 
+                           weight_dict['aptitude'], weight_dict['portfolio'], weight_dict['ai']])
+        print(f"[BATCH-OFFLINE] Weight profile: Skills={weight_dict['skills']}%, Academic={weight_dict['academic']}%, "
+              f"Corporate={weight_dict['corporate']}%, Aptitude={weight_dict['aptitude']}%, "
+              f"Portfolio={weight_dict['portfolio']}%, AI={weight_dict['ai']}% (Total={total_weight})")
+        
+        # Process each student
         results = []
         
-        for idx, row in csv_df.iterrows():
+        for index, row in csv_df.iterrows():
+            student_name = row.get('Name', f'Student_{index}')
+            print(f"[BATCH-OFFLINE] Processing {index+1}/{len(csv_df)}: {student_name}")
+            
             try:
-                # Extract student data with flexible column name matching
-                student_name = str(row.get('Name', f'Student_{idx}')).strip()
-                roll_number = str(row.get('Roll_Number', f'ROLL_{idx}')).strip()
+                # Extract weights
+                weight_skills = weight_dict['skills']
+                weight_academic = weight_dict['academic']
+                weight_corporate = weight_dict['corporate']
+                weight_aptitude = weight_dict['aptitude']
+                weight_portfolio = weight_dict['portfolio']
+                weight_ai = weight_dict['ai']
                 
-                try:
-                    cgpa = float(row.get('CGPA', 0.0))
-                except (ValueError, TypeError):
-                    cgpa = 0.0
+                # Phase 1: Hard gates 1 & 2 (backlogs, CGPA)
+                eligible, fail_reason, min_cgpa, gate_type = check_hard_gates(row, combined_skill_set, request.jd_text)
                 
-                try:
-                    active_backlogs = int(row.get('Active_Backlogs', 0))
-                except (ValueError, TypeError):
-                    active_backlogs = 0
+                if not eligible:
+                    print(f"[BATCH-OFFLINE] {student_name} failed hard gate: {gate_type}")
+                    result = StudentAnalysisResult(
+                        name=row['Name'],
+                        roll_number=str(row.get('Roll_Number', 'N/A')),
+                        cgpa=float(row.get('CGPA', 0)),
+                        eligible=False,
+                        fail_reason=fail_reason,
+                        gate_type=gate_type,
+                        final_score=0.0,
+                        tier="Needs Training",
+                        jd_type=jd_type,
+                        jd_type_description=jd_type_description,
+                        present_skills=[],
+                        missing_skills=combined_skill_set,
+                        corporate_matches=[],
+                        zero_skill_note="",
+                        portfolio_gate_note="",
+                        portfolio_multiplier=0.0,
+                        aptitude_bonus_applied=False,
+                        pillar_breakdown=PillarBreakdown(
+                            skills=0, academics=0, corporate_readiness=0,
+                            aptitude=0, portfolio=0, ai_growth=0
+                        ),
+                        confidence_level="High",
+                        confidence_note=fail_reason,
+                        ai_insight=fail_reason,
+                        growth_reasoning=""
+                    )
+                    results.append(result)
+                    continue
                 
-                # Build student text profile from available fields
-                student_text_parts = [student_name]
-                if pd.notna(row.get('Technical_Skills')):
-                    student_text_parts.append(str(row.get('Technical_Skills')))
-                if pd.notna(row.get('Branch')):
-                    student_text_parts.append(str(row.get('Branch')))
+                # Phase 2: Calculate 6 pillars using modular functions
+                # Pillar 1: Skills
+                p1_score, present_skills, missing_skills, skill_insight = calculate_pillar_1_skills(
+                    row, combined_skill_set, weight_skills
+                )
                 
-                student_text = " ".join(student_text_parts)
+                # Gate 3 check: Skill mismatch
+                student_skills_raw = str(row.get('Technical_Skills', ''))
+                gate_3_fail = False
+                gate_3_fail_reason = ""
                 
-                # Prepare student data dict for offline engine
-                student_data = {
-                    'name': student_name,
-                    'roll_number': roll_number,
-                    'cgpa': cgpa,
-                    'active_backlogs': active_backlogs
-                }
+                if len(present_skills) == 0:
+                    gate_3_fail = True
+                    sample_required = ', '.join(list(combined_skill_set)[:5])
+                    gate_3_fail_reason = (f"Zero skill overlap with JD. "
+                                        f"Current skills ({student_skills_raw}) are "
+                                        f"completely unrelated to this role. "
+                                        f"Required: {sample_required}... "
+                                        f"This is a domain mismatch.")
+                    gate_type = "skill_mismatch"
+                else:
+                    gate_type = ""
                 
-                print(f"[BATCH-OFFLINE] Processing {idx+1}/{len(csv_df)}: {student_name} (CGPA={cgpa}, Backlogs={active_backlogs})")
+                # Pillar 2: Academics
+                p2_score = calculate_pillar_2_academics(row, weight_academic, min_cgpa)
                 
-                # Run OFFLINE HEURISTIC ENGINE
-                heuristic_result = offline_heuristic_engine(student_text, request.jd_text, student_data)
+                # Pillar 3: Corporate Readiness
+                p3_score, corporate_matches = calculate_corporate_readiness(row, weight_corporate, jd_type)
                 
-                # Construct matched skills from combined_skill_set by looking in student text
-                student_text_lower = student_text.lower()
-                present_skills = [s for s in combined_skill_set if s.lower() in student_text_lower]
-                missing_skills = [s for s in combined_skill_set if s.lower() not in student_text_lower]
+                # Pillar 4: Aptitude
+                p_aptitude, aptitude_bonus_applied = calculate_aptitude_pillar(row, weight_aptitude, jd_type)
                 
-                # Map heuristic result to StudentAnalysisResult Pydantic model
-                # CRITICAL: Use result['missing'] which contains the offline-computed missing skills
+                # Pillar 5: Portfolio
+                p5_score, portfolio_gate_note, portfolio_multiplier = calculate_pillar_5_portfolio(
+                    row, weight_portfolio, present_skills, combined_skill_set
+                )
+                
+                # Pillar 6: AI Growth - HARDCODED TO 0 FOR OFFLINE
+                p6_score = 0.0
+                growth_reasoning = "Growth potential unavailable in offline mode"
+                ai_insight = f"Offline analysis: No AI evaluation. Score based on skill match ({len(present_skills)}/{len(combined_skill_set)} skills matched)."
+                
+                # Calculate final score
+                if len(present_skills) == 0:
+                    final_score = min(p2_score + p_aptitude, 35)
+                    zero_skill_note = "Score hard-capped at 35. Zero skill overlap with this JD."
+                else:
+                    final_score = min(p1_score + p2_score + p3_score + p_aptitude + p5_score + p6_score, 100)
+                    zero_skill_note = ""
+                
+                # Phase 3: Confidence
+                confidence_score = 100
+                if not student_skills_raw or str(student_skills_raw).lower() in ['nan', 'none', '']:
+                    confidence_score -= 40
+                if len(combined_skill_set) < 3:
+                    confidence_score -= 25
+                if not row.get('Aptitude_Score'):
+                    confidence_score -= 10
+                if not row.get('Has_Portfolio'):
+                    confidence_score -= 10
+                
+                if confidence_score >= 80:
+                    confidence_level = "High"
+                    confidence_note = "All data present. Score is reliable."
+                elif confidence_score >= 55:
+                    confidence_level = "Medium"
+                    confidence_note = "Some data missing. Treat score as directional."
+                else:
+                    confidence_level = "Low"
+                    confidence_note = "Insufficient data. Score may not reflect true potential."
+                
+                # Create result with all pillars properly populated
                 result = StudentAnalysisResult(
-                    name=student_name,
-                    roll_number=roll_number,
-                    cgpa=cgpa,
-                    eligible=heuristic_result['readiness_score'] >= 50,  # 50+ is eligible
-                    fail_reason="" if heuristic_result['readiness_score'] >= 50 else "Score below 50 threshold",
-                    gate_type="" if heuristic_result['readiness_score'] >= 50 else "heuristic_threshold",
-                    final_score=float(heuristic_result['readiness_score']),
-                    tier=heuristic_result['tier'],
-                    jd_type=heuristic_result['jd_type'],
-                    jd_type_description=heuristic_result['jd_type'],
-                    present_skills=present_skills,
-                    missing_skills=heuristic_result['missing'],  # Use the "missing" key from heuristic
-                    corporate_matches=[],  # N/A for offline
-                    zero_skill_note="" if present_skills else "No skill matches in combined JD set",
-                    portfolio_gate_note="Offline analysis - portfolio not evaluated",
-                    portfolio_multiplier=1.0,
-                    aptitude_bonus_applied=False,  # N/A for offline
+                    name=row['Name'],
+                    roll_number=str(row.get('Roll_Number', 'N/A')),
+                    cgpa=float(row.get('CGPA', 0)),
+                    eligible=not gate_3_fail,
+                    fail_reason=gate_3_fail_reason if gate_3_fail else "",
+                    gate_type=gate_type,
+                    final_score=round(final_score, 1),
+                    tier=get_tier(final_score),
+                    jd_type=jd_type,
+                    jd_type_description=jd_type_description,
+                    present_skills=[s.title() for s in present_skills],
+                    missing_skills=[s.title() for s in missing_skills],
+                    corporate_matches=corporate_matches,
+                    zero_skill_note=zero_skill_note,
+                    portfolio_gate_note=portfolio_gate_note,
+                    portfolio_multiplier=portfolio_multiplier,
+                    aptitude_bonus_applied=aptitude_bonus_applied,
                     pillar_breakdown=PillarBreakdown(
-                        skills=float(heuristic_result['readiness_score']),
-                        academics=0.0,
-                        corporate_readiness=0.0,
-                        aptitude=0.0,
-                        portfolio=0.0,
-                        ai_growth=float(heuristic_result['growth_potential'])
+                        skills=round(p1_score, 1),
+                        academics=round(p2_score, 1),
+                        corporate_readiness=round(p3_score, 1),
+                        aptitude=round(p_aptitude, 1),
+                        portfolio=round(p5_score, 1),
+                        ai_growth=0.0  # OFFLINE: Always 0
                     ),
-                    confidence_level="High",
-                    confidence_note="Fast Logic evaluation - deterministic scoring",
-                    ai_insight=heuristic_result['ai_insight'],
-                    growth_reasoning=f"Growth potential: {heuristic_result['growth_potential']} (baseline {heuristic_result['readiness_score']} + {heuristic_result['growth_potential'] - heuristic_result['readiness_score']} point buffer)"
+                    confidence_level=confidence_level,
+                    confidence_note=confidence_note,
+                    ai_insight=ai_insight,
+                    growth_reasoning=growth_reasoning
                 )
                 
                 results.append(result)
-                print(f"[BATCH-OFFLINE] ✓ {student_name}: Score={heuristic_result['readiness_score']}, Tier={heuristic_result['tier']}")
+                print(f"[BATCH-OFFLINE] ✓ {student_name} completed with score {result.final_score}")
                 
-            except Exception as student_error:
-                print(f"[BATCH-OFFLINE] ⚠ Error processing student {idx}: {str(student_error)[:100]}")
-                # Create error result with all required fields
+            except Exception as e:
+                print(f"[BATCH-OFFLINE] ⚠ Error processing {student_name}: {str(e)[:100]}")
+                # Create graceful error result
                 failed_result = StudentAnalysisResult(
-                    name=str(row.get('Name', f'Student_{idx}')),
-                    roll_number=str(row.get('Roll_Number', f'ROLL_{idx}')),
-                    cgpa=float(row.get('CGPA', 0.0)) if pd.notna(row.get('CGPA')) else 0.0,
+                    name=student_name,
+                    roll_number=str(row.get('Roll_Number', 'N/A')),
+                    cgpa=float(row.get('CGPA', 0)),
                     eligible=False,
-                    fail_reason=f"Processing error: {str(student_error)[:50]}",
+                    fail_reason="Processing error during offline analysis",
                     gate_type="processing_error",
-                    final_score=-1.0,
+                    final_score=-1,
                     tier="Needs Training",
                     jd_type=jd_type,
                     jd_type_description=jd_type_description,
@@ -1393,23 +1587,35 @@ async def analyze_batch_offline(request: BatchAnalysisRequest):
                     missing_skills=combined_skill_set,
                     corporate_matches=[],
                     zero_skill_note="",
-                    portfolio_gate_note="",
+                    portfolio_gate_note="Analysis skipped",
                     portfolio_multiplier=0.0,
                     aptitude_bonus_applied=False,
                     pillar_breakdown=PillarBreakdown(
-                        skills=0.0, academics=0.0, corporate_readiness=0.0,
-                        aptitude=0.0, portfolio=0.0, ai_growth=0.0
+                        skills=0, academics=0, corporate_readiness=0,
+                        aptitude=0, portfolio=0, ai_growth=0
                     ),
                     confidence_level="Low",
                     confidence_note="Processing error encountered",
-                    ai_insight=f"Error during analysis: {str(student_error)[:50]}",
+                    ai_insight="Unable to complete offline analysis",
                     growth_reasoning="Unable to assess"
                 )
                 results.append(failed_result)
         
-        print(f"[BATCH-OFFLINE] ====== Analysis Complete: {len(results)} students processed ======")
+        print(f"[BATCH-OFFLINE] ✓ Analysis complete: {len(results)} students processed")
         
-        # Return response with same structure as LLM endpoint
+        # Get min_cgpa from JD (for response metadata)
+        min_cgpa = 0.0
+        cgpa_patterns = [
+            r'(\d+\.\d+)\s*(?:CGPA|cgpa|GPA|gpa)',
+            r'(?:CGPA|cgpa|GPA|gpa)\s*(?:of\s*)?(\d+\.\d+)',
+        ]
+        for pattern in cgpa_patterns:
+            matches = re.findall(pattern, request.jd_text)
+            for match in matches:
+                val = float(match)
+                if 0.0 < val <= 10.0:
+                    min_cgpa = max(min_cgpa, val)
+        
         return {
             "total_students": len(csv_df),
             "analyzed_students": len(results),
@@ -1417,8 +1623,8 @@ async def analyze_batch_offline(request: BatchAnalysisRequest):
                 "combined_skill_set": combined_skill_set,
                 "jd_type": jd_type,
                 "jd_type_description": jd_type_description,
-                "weight_profile": "offline_heuristic",
-                "min_cgpa": 0.0  # No specific CGPA gate for offline
+                "weight_profile": weight_dict,
+                "min_cgpa": min_cgpa
             },
             "results": results
         }
@@ -1481,7 +1687,7 @@ async def analyze_resume_offline(request: ResumeAnalysisRequest):
         
         print(f"[RESUME-OFFLINE] Resume text length: {len(resume_text)} characters")
         
-        # Run offline heuristic engine
+        # Run offline heuristic engine (designed for resume/text-based scoring)
         heuristic_result = offline_heuristic_engine(resume_text, request.jd_text)
         
         score = heuristic_result['readiness_score']
@@ -1506,7 +1712,18 @@ async def analyze_resume_offline(request: ResumeAnalysisRequest):
             heuristic_result['ai_insight']
         ]
         
-        gaps = heuristic_result['missing'][:5]  # Top 5 missing skills
+        gaps = heuristic_result['gaps_list']  # Premium formatted gap descriptions
+        
+        # Extract pillar breakdown for frontend progress bars
+        pb = heuristic_result.get('pillar_breakdown', {})
+        pillar_breakdown = PillarBreakdown(
+            skills=float(pb.get('skills', 0)),
+            academics=float(pb.get('academics', 0)),
+            corporate_readiness=float(pb.get('corporate_readiness', 0)),
+            aptitude=float(pb.get('aptitude', 0)),
+            portfolio=float(pb.get('portfolio', 0)),
+            ai_growth=float(pb.get('ai_growth', 0))
+        )
         
         print(f"[RESUME-OFFLINE] ✓ Analysis complete: Score={score}, Recommendation={recommendation}")
         
@@ -1515,7 +1732,8 @@ async def analyze_resume_offline(request: ResumeAnalysisRequest):
             recommendation=recommendation,
             strengths=strengths,
             gaps=gaps,
-            detailed_feedback=heuristic_result['ai_insight']
+            detailed_feedback=heuristic_result['ai_insight'],
+            pillar_breakdown=pillar_breakdown
         )
     
     except HTTPException:
