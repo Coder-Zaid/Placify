@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import { useState, useCallback } from 'react'
-import { Upload, Loader, AlertCircle, Info, Zap } from 'lucide-react'
+import { Upload, Loader, AlertCircle, Zap } from 'lucide-react'
 import axios from 'axios'
 
 export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
@@ -17,17 +17,16 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     const reader = new FileReader()
     reader.onload = (event) => {
       updateData({ resumeBase64: event.target.result.split(',')[1] })
-      // Show success toast
       addToast(`PDF loaded: ${file.name}`, {
         type: 'success',
-        title: '✓ Resume Uploaded Successfully',
+        title: 'Resume Uploaded Successfully',
         duration: 3000
       })
     }
     reader.readAsDataURL(file)
   }, [updateData, addToast])
 
-  // --- THE NEW FAST LOGIC (OFFLINE) ENGINE (FIXED) ---
+  // Offline logic
   const handleOfflineAnalyze = useCallback(async () => {
     updateData({ error: '' })
 
@@ -40,31 +39,25 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
 
     updateData({ isLoading: true, results: null })
     setIsAnalyzing(true)
-    console.log('[ResumeAnalyzer] Starting OFFLINE analysis...')
 
     try {
       const response = await axios.post('http://localhost:8000/analyze/resume/offline', {
         jd_text: jdText,
         resume_base64: resumeBase64,
-        api_key: apiKey || "offline_dummy_key" // FIX 1: Satisfy FastAPI's strict Pydantic model
+        api_key: apiKey || "offline_dummy_key"
       })
       
       updateData({ results: response.data })
-      console.log('[ResumeAnalyzer] ✅ Offline Analysis complete')
-      
       addToast('Fast Analysis Complete (Offline)', {
         type: 'success',
-        title: '⚡ Instant Report Generated',
+        title: 'Report Generated',
         duration: 3000
       })
     } catch (err) {
       console.error('[ResumeAnalyzer] Offline Error:', err)
-      
-      // FIX 2: Defensive UI Error Handling (Prevent White Screen of Death)
       let errorDetail = "Offline engine failed. Ensure backend offline route is running."
       
       if (err.response?.data?.detail) {
-        // If FastAPI sends back an array of validation objects, extract the text safely
         if (Array.isArray(err.response.data.detail)) {
           errorDetail = err.response.data.detail.map(d => `${d.loc?.join('.') || 'Field'}: ${d.msg}`).join(' | ')
         } else if (typeof err.response.data.detail === 'string') {
@@ -84,7 +77,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     }
   }, [jdText, resumeBase64, apiKey, updateData, addToast])
 
-  // --- THE OLD AI ENGINE (Currently Rate Limited) ---
+  // AI engine
   const handleAnalyze = useCallback(async () => {
     updateData({ error: '' })
 
@@ -122,7 +115,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
       if (!response.data) throw new Error("Invalid response")
       
       updateData({ results: response.data })
-      addToast('Resume analysis complete!', { type: 'success', title: '✅ Report Complete!', duration: 4000 })
+      addToast('Resume analysis complete!', { type: 'success', title: 'Report Complete!', duration: 4000 })
     } catch (err) {
       const errorDetail = err.response?.data?.detail || err.message || 'Unknown error'
       updateData({ error: errorDetail })
@@ -134,24 +127,27 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
   }, [jdText, resumeBase64, apiKey, updateData, addToast])
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Single Resume Analyzer</h2>
+    <div className="space-y-12">
+      <div className="q-card space-y-8">
+        <div>
+          <h2 className="text-2xl font-medium tracking-tight text-[#0F0F11]">Single Resume Analyzer</h2>
+          <p className="text-sm text-[#6F6F75] mt-1">Submit job requirements and a candidate resume to evaluate suitability.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">Job Description</label>
             <textarea
               value={jdText}
               onChange={(e) => updateData({ jdText: e.target.value })}
               placeholder="Paste job requirements here..."
-              className="textarea-field h-48"
+              className="textarea-field h-52 font-display text-sm leading-relaxed"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Resume PDF</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-placify-primary transition cursor-pointer">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">Resume PDF</label>
+            <div className="border border-[#0F0F11]/10 rounded-[14px] bg-[#FAFAF8] p-10 text-center hover:border-[#0F0F11] transition cursor-pointer flex flex-col items-center justify-center h-52">
               <input
                 type="file"
                 accept=".pdf"
@@ -159,71 +155,84 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
                 className="hidden"
                 id="resume-input"
               />
-              <label htmlFor="resume-input" className="cursor-pointer">
-                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-700">Click to upload PDF</p>
+              <label htmlFor="resume-input" className="cursor-pointer space-y-3">
+                <Upload className="mx-auto h-6 w-6 text-[#6F6F75] stroke-[1.5]" />
+                <div>
+                  <p className="text-sm font-medium text-[#0F0F11]">Upload candidate PDF</p>
+                  <p className="text-xs text-[#A8A8AE] mt-1">Only PDF format accepted</p>
+                </div>
               </label>
             </div>
-            {resumeFile && <p className="text-sm text-placify-success mt-2">✓ {resumeFile.name} uploaded</p>}
+            {resumeFile && (
+              <p className="text-xs font-mono text-[#6F6F75] mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-[#0F0F11] rounded-full inline-block"></span>
+                {resumeFile.name} Loaded
+              </p>
+            )}
           </div>
         </div>
 
         {error && (
-          <div className="bg-placify-danger/10 border border-placify-danger rounded-lg p-4 mb-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-placify-danger mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-placify-danger">Error</h3>
-              <p className="text-sm text-placify-danger">{error}</p>
+          <div className="border border-[#0F0F11]/10 rounded-[14px] p-5 flex items-start gap-4 bg-white">
+            <AlertCircle className="h-5 w-5 text-[#0F0F11] mt-0.5 flex-shrink-0 stroke-[1.5]" />
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm text-[#0F0F11]">System Notice</h3>
+              <p className="text-sm text-[#6F6F75] leading-relaxed">{error}</p>
             </div>
           </div>
         )}
 
-        {/* --- DUAL BUTTON LAYOUT --- */}
-        <div className="flex flex-wrap gap-4 mt-6">
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-[#0F0F11]/10">
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary"
           >
-            {isLoading && isAnalyzing ? <Loader className="h-4 w-4 animate-spin" /> : null}
+            {isLoading && isAnalyzing ? <Loader className="h-4 w-4 animate-spin mr-2 stroke-[1.5]" /> : null}
             Analyze with AI
           </button>
 
           <button
             onClick={handleOfflineAnalyze}
             disabled={isLoading || !resumeBase64}
-            className="px-6 py-2 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg"
+            className="btn-secondary flex items-center gap-2"
           >
-            <Zap className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            Run Fast Logic (Offline)
+            <Zap className="h-4 w-4 stroke-[1.5]" />
+            Fast Offline Run
           </button>
         </div>
       </div>
 
       {/* Results Section */}
       {results && (
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          <h3 className="text-lg font-bold text-gray-900">Analysis Results</h3>
-          <div className="metric-card">
-            <div className="text-sm font-medium text-gray-600">Overall Score</div>
-            <div className="text-3xl font-bold text-placify-primary mt-2">{results.overall_score}</div>
+        <div className="q-card space-y-8">
+          <div>
+            <h3 className="text-xl font-medium tracking-tight text-[#0F0F11]">Analysis Report</h3>
+            <p className="text-sm text-[#6F6F75] mt-1">Generated metrics based on alignment profiles.</p>
           </div>
-          <div className="metric-card">
-            <div className="text-sm font-medium text-gray-600">Recommendation</div>
-            <div className={`text-lg font-bold mt-2 ${getRecognitionColor(results.recommendation)}`}>
-              {results.recommendation}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="border border-[#0F0F11]/10 rounded-[14px] p-6 bg-[#FAFAF8] space-y-1">
+              <div className="font-mono text-xs text-[#A8A8AE] uppercase tracking-wider">Overall Score</div>
+              <div className="text-4xl font-medium tracking-tight text-[#0F0F11] pt-1">{results.overall_score}<span className="text-lg text-[#6F6F75]">/100</span></div>
+            </div>
+            
+            <div className="border border-[#0F0F11]/10 rounded-[14px] p-6 bg-[#FAFAF8] space-y-1">
+              <div className="font-mono text-xs text-[#A8A8AE] uppercase tracking-wider">Recommendation Profile</div>
+              <div className="text-2xl font-medium tracking-tight text-[#0F0F11] pt-2">
+                {results.recommendation}
+              </div>
             </div>
           </div>
           
-          {/* Strengths & Gaps Mapping */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
              {results.strengths && results.strengths.length > 0 && (
-              <div className="summary-box">
-                <h4 className="font-semibold text-placify-success mb-3">✓ Key Strengths</h4>
-                <ul className="space-y-2">
+              <div className="space-y-4">
+                <h4 className="font-mono text-xs font-semibold text-[#6F6F75] uppercase tracking-widest">Key Strengths</h4>
+                <ul className="space-y-3">
                   {results.strengths.map((strength, idx) => (
-                    <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                      <span className="text-placify-success mt-1">•</span>
+                    <li key={idx} className="text-sm text-[#6F6F75] flex items-start gap-3 leading-relaxed">
+                      <span className="text-[#0F0F11] font-mono mt-0.5">•</span>
                       <span>{strength}</span>
                     </li>
                   ))}
@@ -232,12 +241,12 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
             )}
 
             {results.gaps && results.gaps.length > 0 && (
-              <div className="summary-box">
-                <h4 className="font-semibold text-placify-warning mb-3">⚠ Skill Gaps</h4>
-                <ul className="space-y-2">
+              <div className="space-y-4">
+                <h4 className="font-mono text-xs font-semibold text-[#6F6F75] uppercase tracking-widest">Skill Gaps</h4>
+                <ul className="space-y-3">
                   {results.gaps.map((gap, idx) => (
-                    <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                      <span className="text-placify-warning mt-1">•</span>
+                    <li key={idx} className="text-sm text-[#6F6F75] flex items-start gap-3 leading-relaxed">
+                      <span className="text-[#A8A8AE] font-mono mt-0.5">•</span>
                       <span>{gap}</span>
                     </li>
                   ))}
@@ -249,15 +258,4 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
       )}
     </div>
   )
-}
-
-function getRecognitionColor(recommendation) {
-  if (!recommendation) return 'text-gray-700'
-  switch (recommendation.toLowerCase()) {
-    case 'highly recommended': return 'text-placify-success'
-    case 'recommended': return 'text-blue-600'
-    case 'consider': return 'text-placify-warning'
-    case 'not recommended': return 'text-placify-danger'
-    default: return 'text-gray-700'
-  }
 }

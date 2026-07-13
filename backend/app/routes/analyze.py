@@ -643,21 +643,33 @@ async def analyze_batch(request: BatchAnalysisRequest):
                 detail="API key required. Please enter your Gemini API key in the sidebar."
             )
         
-        print(f"[BATCH] API key validated: {request.api_key[:8]}...")
+        api_key_clean = request.api_key.strip()
+        print(f"[BATCH] API key validated: {api_key_clean[:8]}...")
         
-        # Step 1: Detect working model (NO pinging - just returns model name)
-        try:
-            print(f"[BATCH] Detecting available Gemini model...")
-            working_model = get_working_model(request.api_key)
-            print(f"[BATCH] Model auto-detected: {working_model}")
-        except Exception as model_error:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Model detection failed: {str(model_error)}"
-            )
+        # Step 1: Detect working model (Gemini-only auto-detect, others use defaults)
+        working_model = None
+        if api_key_clean.startswith('AIza'):
+            try:
+                print(f"[BATCH] Detecting available Gemini model...")
+                working_model = get_working_model(api_key_clean)
+                print(f"[BATCH] Model auto-detected: {working_model}")
+            except Exception as model_error:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Model detection failed: {str(model_error)}"
+                )
+        elif api_key_clean.startswith('gsk_'):
+            working_model = "llama-3.3-70b-versatile"
+            print(f"[BATCH] Groq API key detected. Model: {working_model}")
+        elif api_key_clean.startswith('sk-ant'):
+            working_model = "claude-3-5-sonnet-20241022"
+            print(f"[BATCH] Anthropic API key detected. Model: {working_model}")
+        else:
+            working_model = "gpt-4o-mini"
+            print(f"[BATCH] OpenAI API key detected. Model: {working_model}")
         
         # Initialize LLM service
-        api_keys = {'GEMINI_API_KEY': request.api_key.strip()}
+        api_keys = {'GEMINI_API_KEY': api_key_clean}
         llm_service = UniversalLLMService(api_keys=api_keys, working_model=working_model)
         print(f"[BATCH] LLM service initialized with model: {working_model}")
         
@@ -948,36 +960,48 @@ async def analyze_resume(request: ResumeAnalysisRequest):
         if not request.api_key or not request.api_key.strip():
             raise HTTPException(
                 status_code=401,
-                detail="API key required. Please enter your Gemini API key in the sidebar."
+                detail="API key required. Please enter your API key in the sidebar."
             )
         
-        print(f"[RESUME] API key validated: {request.api_key[:8]}...")
+        api_key_clean = request.api_key.strip()
+        print(f"[RESUME] API key validated: {api_key_clean[:8]}...")
         
-        # Step 1: Detect working model with exponential backoff
-        try:
-            print(f"[RESUME] Detecting available Gemini model...")
-            working_model = get_working_model(request.api_key)
-            print(f"[RESUME] Model auto-detected: {working_model}")
-        except Exception as model_error:
-            error_str = str(model_error).lower()
-            if 'api_key' in error_str or 'authentication' in error_str or 'invalid' in error_str:
-                raise HTTPException(
-                    status_code=401,
-                    detail="Invalid API key. Please check your Gemini API key in the sidebar."
-                )
-            elif '429' in error_str or 'quota' in error_str or 'resource_exhausted' in error_str:
-                raise HTTPException(
-                    status_code=429,
-                    detail="Rate limit reached. Wait 1 minute and retry. Daily quota may be exhausted."
-                )
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Model detection failed: {str(model_error)[:80]}"
-                )
+        # Step 1: Detect working model (Gemini-only auto-detect, others use defaults)
+        working_model = None
+        if api_key_clean.startswith('AIza'):
+            try:
+                print(f"[RESUME] Detecting available Gemini model...")
+                working_model = get_working_model(api_key_clean)
+                print(f"[RESUME] Model auto-detected: {working_model}")
+            except Exception as model_error:
+                error_str = str(model_error).lower()
+                if 'api_key' in error_str or 'authentication' in error_str or 'invalid' in error_str:
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Invalid Gemini API key. Please check your key in the sidebar."
+                    )
+                elif '429' in error_str or 'quota' in error_str or 'resource_exhausted' in error_str:
+                    raise HTTPException(
+                        status_code=429,
+                        detail="Rate limit reached. Wait 1 minute and retry. Daily quota may be exhausted."
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Model detection failed: {str(model_error)[:80]}"
+                    )
+        elif api_key_clean.startswith('gsk_'):
+            working_model = "llama-3.3-70b-versatile"
+            print(f"[RESUME] Groq API key detected. Model: {working_model}")
+        elif api_key_clean.startswith('sk-ant'):
+            working_model = "claude-3-5-sonnet-20241022"
+            print(f"[RESUME] Anthropic API key detected. Model: {working_model}")
+        else:
+            working_model = "gpt-4o-mini"
+            print(f"[RESUME] OpenAI API key detected. Model: {working_model}")
         
         # Initialize LLM service
-        api_keys = {'GEMINI_API_KEY': request.api_key.strip()}
+        api_keys = {'GEMINI_API_KEY': api_key_clean}
         llm_service = UniversalLLMService(api_keys=api_keys, working_model=working_model)
         print(f"[RESUME] LLM service initialized with model: {working_model}")
         

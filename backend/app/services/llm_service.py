@@ -67,6 +67,22 @@ class UniversalLLMService:
                 print(f"[LLM] ✓ Anthropic provider auto-detected. Model: {self.working_model}")
                 return
         
+        # Check for Groq (gsk_ prefix)
+        if 'GROQ_API_KEY' in self.api_keys or any(k.startswith('gsk_') for k in self.api_keys.values()):
+            groq_key = self.api_keys.get('GROQ_API_KEY', '').strip()
+            if not groq_key:
+                groq_key = next((v.strip() for v in self.api_keys.values() if v.strip().startswith('gsk_')), '')
+            if groq_key:
+                self.api_key = groq_key
+                self.provider = 'groq'
+                self.working_model = working_model or 'llama-3.3-70b-versatile'
+                self.client = openai.OpenAI(
+                    api_key=self.api_key,
+                    base_url="https://api.groq.com/openai/v1"
+                )
+                print(f"[LLM] ✓ Groq provider auto-detected. Model: {self.working_model}")
+                return
+        
         # Check for OpenAI (sk- prefix, but not sk-ant)
         if 'OPENAI_API_KEY' in self.api_keys:
             openai_key = self.api_keys.get('OPENAI_API_KEY', '').strip()
@@ -82,7 +98,6 @@ class UniversalLLMService:
         if 'GEMINI_API_KEY' in self.api_keys:
             gemini_key = self.api_keys.get('GEMINI_API_KEY', '').strip()
             if gemini_key:
-                # Try to detect based on key format
                 if gemini_key.startswith('AIza'):
                     self.api_key = gemini_key
                     self.provider = 'gemini'
@@ -90,11 +105,21 @@ class UniversalLLMService:
                     self.client = genai.Client(api_key=self.api_key)
                     print(f"[LLM] ✓ Gemini provider auto-detected. Model: {self.working_model}")
                     return
+                elif gemini_key.startswith('gsk_'):
+                    self.api_key = gemini_key
+                    self.provider = 'groq'
+                    self.working_model = working_model or 'llama-3.3-70b-versatile'
+                    self.client = openai.OpenAI(
+                        api_key=self.api_key,
+                        base_url="https://api.groq.com/openai/v1"
+                    )
+                    print(f"[LLM] ✓ Groq provider auto-detected from fallback. Model: {self.working_model}")
+                    return
         
         # No valid API key found
         raise Exception(
             "No valid API key detected. "
-            "Please provide one of: GEMINI_API_KEY (AIza*), ANTHROPIC_API_KEY (sk-ant*), or OPENAI_API_KEY (sk-*)"
+            "Please provide one of: GEMINI_API_KEY (AIza*), GROQ_API_KEY (gsk_*), ANTHROPIC_API_KEY (sk-ant*), or OPENAI_API_KEY (sk-*)"
         )
     
     def _call_gemini(self, prompt: str, model: str = None) -> str:
@@ -230,7 +255,7 @@ class UniversalLLMService:
                 # Route to correct provider
                 if self.provider == 'gemini':
                     result = self._call_gemini(prompt, model)
-                elif self.provider == 'openai':
+                elif self.provider == 'openai' or self.provider == 'groq':
                     result = self._call_openai(prompt, model, use_json_mode=use_json_mode)
                 elif self.provider == 'anthropic':
                     result = self._call_anthropic(prompt, model)

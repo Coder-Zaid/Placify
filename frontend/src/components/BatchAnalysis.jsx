@@ -39,13 +39,12 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
     const reader = new FileReader()
     reader.onload = (event) => {
       updateData({ csvText: event.target.result })
-      // Show success toast with row count
       try {
         const lines = event.target.result.split('\n').filter(line => line.trim())
-        const rowCount = Math.max(0, lines.length - 1) // Subtract header
+        const rowCount = Math.max(0, lines.length - 1)
         addToast(`CSV loaded with ${rowCount} students`, {
           type: 'success',
-          title: '✓ CSV Uploaded Successfully',
+          title: 'CSV Uploaded Successfully',
           duration: 3000
         })
       } catch (err) {
@@ -72,29 +71,23 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
       return
     }
 
-    // Calculate ETA: faster than AI (no 8s throttle needed for offline)
     const lines = csvText.split('\n').filter(line => line.trim())
     const rowCount = Math.max(0, lines.length - 1)
-    const estimatedSeconds = Math.max(5, rowCount * 2)  // Offline is ~2s per student
+    const estimatedSeconds = Math.max(5, rowCount * 2)
     
     setTotalTime(estimatedSeconds)
     setTimeLeft(estimatedSeconds)
 
     updateData({ isLoading: true, results: null })
-    console.log('[BatchAnalysis] Starting OFFLINE analysis...')
 
     try {
-      console.log('[BatchAnalysis] Sending request to /analyze/batch/offline...')
       const response = await axios.post('http://localhost:8000/analyze/batch/offline', {
         jd_text: jdText,
         csv_data: csvText,
-        api_key: 'offline_dummy_key' // Offline doesn't need real key
+        api_key: 'offline_dummy_key'
       })
       
-      console.log('[BatchAnalysis] Response received:', response.status, response.data)
-      
       if (!response.data || !response.data.results) {
-        console.error('[BatchAnalysis] Invalid response format:', response.data)
         const err = 'Backend returned invalid response format. Check console logs.'
         updateData({ error: err })
         addToast(err, { type: 'error', title: 'Invalid Response', duration: 4000 })
@@ -102,26 +95,17 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
       }
       
       updateData({ results: response.data })
-      console.log('[BatchAnalysis] ✅ Offline analysis complete:', response.data.results.length, 'results')
-      
-      // Show success toast
       addToast(`Fast Logic Complete! ${response.data.results.length} students scored instantly.`, {
         type: 'success',
-        title: '⚡ Instant Report Generated!',
+        title: 'Instant Report Generated!',
         duration: 4000
       })
     } catch (err) {
       console.error('[BatchAnalysis] Offline Error:', err)
-      console.error('[BatchAnalysis] Error response:', err.response?.data)
-      
       const errorDetail = err.response?.data?.detail || err.message || 'Unknown error'
-      const errorStr = errorDetail.toString().toLowerCase()
-      
       let friendlyError = errorDetail
       if (err.code === 'ERR_NETWORK') {
         friendlyError = "Cannot connect to backend. Make sure the backend server is running on http://localhost:8000"
-      } else if (!err.response) {
-        friendlyError = `Network error: ${err.message}. Is the backend running?`
       }
       
       updateData({ error: friendlyError || 'Offline analysis failed. Please try again.' })
@@ -156,7 +140,6 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
       return
     }
 
-    // Calculate ETA: number of rows * 10 seconds per row (8s throttle + 2s buffer)
     const lines = csvText.split('\n').filter(line => line.trim())
     const rowCount = Math.max(0, lines.length - 1)
     const estimatedSeconds = rowCount * 10
@@ -165,20 +148,15 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
     setTimeLeft(estimatedSeconds)
 
     updateData({ isLoading: true, results: null })
-    console.log('[BatchAnalysis] Starting analysis...')
 
     try {
-      console.log('[BatchAnalysis] Sending request to /analyze/batch...')
       const response = await axios.post('http://localhost:8000/analyze/batch', {
         jd_text: jdText,
         csv_data: csvText,
         api_key: apiKey
       })
-
-      console.log('[BatchAnalysis] Response received:', response.status, response.data)
       
       if (!response.data || !response.data.results) {
-        console.error('[BatchAnalysis] Invalid response format:', response.data)
         const err = 'Backend returned invalid response format. Check console logs.'
         updateData({ error: err })
         addToast(err, { type: 'error', title: 'Invalid Response', duration: 4000 })
@@ -186,32 +164,15 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
       }
       
       updateData({ results: response.data })
-      console.log('[BatchAnalysis] ✅ Analysis complete:', response.data.results.length, 'results')
-      
-      // Show success toast
       addToast(`Analysis complete! ${response.data.results.length} students scored.`, {
         type: 'success',
-        title: '✅ Report Generation Complete!',
+        title: 'Report Generation Complete!',
         duration: 4000
       })
     } catch (err) {
       console.error('[BatchAnalysis] Error:', err)
-      console.error('[BatchAnalysis] Error response:', err.response?.data)
-      
       const errorDetail = err.response?.data?.detail || err.message || 'Unknown error'
-      const errorStr = errorDetail.toString().toLowerCase()
-      
       let friendlyError = errorDetail
-      if (err.response?.status === 401 || 'api key' in errorStr) {
-        friendlyError = "Please enter your API key in the sidebar to run AI analysis."
-      } else if (err.response?.status === 429 || '429' in errorStr || 'quota' in errorStr || 'resource_exhausted' in errorStr) {
-        friendlyError = "Rate limit reached. Wait 1 minute and retry. Your API key's daily quota may be exhausted."
-      } else if (err.code === 'ERR_NETWORK') {
-        friendlyError = "Cannot connect to backend. Make sure the backend server is running on http://localhost:8000"
-      } else if (!err.response) {
-        friendlyError = `Network error: ${err.message}. Is the backend running?`
-      }
-      
       updateData({ error: friendlyError || 'Error analyzing batch. Please try again.' })
       addToast(friendlyError, { type: 'error', title: 'Analysis Error', duration: 5000 })
     } finally {
@@ -259,34 +220,34 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       {/* Input Section */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Institutional Batch Analysis</h2>
+      <div className="q-card space-y-8">
+        <div>
+          <h2 className="text-2xl font-medium tracking-tight text-[#0F0F11]">Institutional Batch Analysis</h2>
+          <p className="text-sm text-[#6F6F75] mt-1">Upload a student batch list in CSV format to run qualification criteria scoring.</p>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Job Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">
               Job Description
             </label>
             <textarea
               value={jdText}
               onChange={(e) => updateData({ jdText: e.target.value })}
               placeholder="Paste the complete job description here..."
-              className="textarea-field h-48"
+              className="textarea-field h-52 font-display text-sm leading-relaxed"
             />
-            <p className="text-xs text-gray-500 mt-2">
-              Include required skills, CGPA minimum, aptitude requirements, and portfolio needs
-            </p>
           </div>
 
           {/* CSV Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">
               Student CSV File
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-placify-primary transition cursor-pointer">
+            <div className="border border-[#0F0F11]/10 rounded-[14px] bg-[#FAFAF8] p-10 text-center hover:border-[#0F0F11] transition cursor-pointer flex flex-col items-center justify-center h-52">
               <input
                 type="file"
                 accept=".csv"
@@ -294,39 +255,44 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
                 className="hidden"
                 id="csv-input"
               />
-              <label htmlFor="csv-input" className="cursor-pointer">
-                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-700">Click to upload CSV</p>
-                <p className="text-xs text-gray-500">or drag and drop</p>
+              <label htmlFor="csv-input" className="cursor-pointer space-y-3">
+                <Upload className="mx-auto h-6 w-6 text-[#6F6F75] stroke-[1.5]" />
+                <div>
+                  <p className="text-sm font-medium text-[#0F0F11]">Upload students CSV</p>
+                  <p className="text-xs text-[#A8A8AE] mt-1">Excel or database CSV exports</p>
+                </div>
               </label>
             </div>
             {csvFile && (
-              <p className="text-sm text-placify-success mt-2">✓ {csvFile.name} uploaded</p>
+              <p className="text-xs font-mono text-[#6F6F75] mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-[#0F0F11] rounded-full inline-block"></span>
+                {csvFile.name} Loaded
+              </p>
             )}
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="bg-placify-danger/10 border border-placify-danger rounded-lg p-4 mb-4 flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-placify-danger mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-placify-danger">Error</h3>
-              <p className="text-sm text-placify-danger">{error}</p>
+          <div className="border border-[#0F0F11]/10 rounded-[14px] p-5 flex items-start gap-4 bg-white">
+            <AlertCircle className="h-5 w-5 text-[#0F0F11] mt-0.5 flex-shrink-0 stroke-[1.5]" />
+            <div className="space-y-1">
+              <h3 className="font-semibold text-sm text-[#0F0F11]">System Notice</h3>
+              <p className="text-sm text-[#6F6F75] leading-relaxed">{error}</p>
             </div>
           </div>
         )}
 
         {/* Buttons */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-[#0F0F11]/10">
           <button
             onClick={handleAnalyze}
             disabled={isLoading}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary"
           >
             {isLoading ? (
               <>
-                <Loader className="h-4 w-4 animate-spin" />
+                <Loader className="h-4 w-4 animate-spin mr-2 stroke-[1.5]" />
                 Analyzing Batch...
               </>
             ) : (
@@ -337,43 +303,48 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
           <button
             onClick={handleOfflineBatch}
             disabled={isLoading}
-            className="px-6 py-2 rounded-lg bg-slate-800 text-white font-semibold hover:bg-slate-900 transition flex items-center gap-2 shadow-lg"
+            className="btn-secondary flex items-center gap-2"
           >
-            <Zap className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            Run Fast Logic (Offline)
+            <Zap className="h-4 w-4 stroke-[1.5]" />
+            Fast Offline Run
           </button>
 
           {results && (
             <button
               onClick={downloadResults}
-              className="btn-secondary flex items-center gap-2"
+              className="btn-outline flex items-center gap-2"
             >
-              <Download className="h-4 w-4" />
-              Download Results
+              <Download className="h-4 w-4 stroke-[1.5]" />
+              Export Results
             </button>
           )}
         </div>
 
         {isLoading && (
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+          <div className="p-6 border border-[#0F0F11]/10 rounded-[14px] bg-white space-y-4">
             <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-blue-800">
-                ⏳ Analyzing students with 4-pillar scoring engine. This may take a few minutes depending on batch size and AI analysis depth.
-              </p>
+              <Info className="h-5 w-5 text-[#0F0F11] mt-0.5 flex-shrink-0 stroke-[1.5]" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-[#0F0F11]">Analyzing Placement Batch</p>
+                <p className="text-sm text-[#6F6F75]">
+                  Applying 4-pillar analysis parameters across student metrics. This process runs sequentially.
+                </p>
+              </div>
             </div>
             
             {/* ETA Timer */}
             {timeLeft > 0 && (
-              <div className="flex items-center gap-3 bg-white rounded p-3 border border-blue-100">
-                <Clock className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-blue-700">Estimated Time Remaining</p>
-                  <p className="text-lg font-mono font-bold text-blue-600">{formatTime(timeLeft)}</p>
+              <div className="flex items-center justify-between p-4 bg-[#FAFAF8] rounded-[10px] border border-[#0F0F11]/5">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-[#6F6F75] stroke-[1.5]" />
+                  <div>
+                    <p className="text-xs font-mono text-[#A8A8AE] uppercase tracking-wider">Estimated Time Remaining</p>
+                    <p className="text-lg font-mono font-medium text-[#0F0F11]">{formatTime(timeLeft)}</p>
+                  </div>
                 </div>
-                <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+                <div className="w-24 h-1 bg-[#0F0F11]/10 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-blue-600 transition-all duration-1000"
+                    className="h-full bg-[#0F0F11] transition-all duration-1000"
                     style={{ width: `${totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 0}%` }}
                   />
                 </div>
