@@ -41,7 +41,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     setIsAnalyzing(true)
 
     try {
-      const response = await axios.post('http://localhost:8000/analyze/resume/offline', {
+      const response = await axios.post('/analyze/resume/offline', {
         jd_text: jdText,
         resume_base64: resumeBase64,
         api_key: apiKey || "offline_dummy_key"
@@ -106,7 +106,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
     setIsAnalyzing(true)
 
     try {
-      const response = await axios.post('http://localhost:8000/analyze/resume', {
+      const response = await axios.post('/analyze/resume', {
         jd_text: jdText,
         resume_base64: resumeBase64,
         api_key: apiKey

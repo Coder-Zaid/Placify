@@ -81,7 +81,7 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
     updateData({ isLoading: true, results: null })
 
     try {
-      const response = await axios.post('http://localhost:8000/analyze/batch/offline', {
+      const response = await axios.post('/analyze/batch/offline', {
         jd_text: jdText,
         csv_data: csvText,
         api_key: 'offline_dummy_key'
@@ -150,7 +150,7 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
     updateData({ isLoading: true, results: null })
 
     try {
-      const response = await axios.post('http://localhost:8000/analyze/batch', {
+      const response = await axios.post('/analyze/batch', {
         jd_text: jdText,
         csv_data: csvText,
         api_key: apiKey
