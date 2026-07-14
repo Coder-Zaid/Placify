@@ -26,7 +26,7 @@ axios.interceptors.request.use((config) => {
 })
 
 // Highly Realistic Envelope and Letter Visual
-const EnvelopeVisual = ({ scrollProgress }) => {
+const EnvelopeVisual = ({ scrollProgress, user }) => {
   // Map scroll progress (between 0.80 and 0.95) to open the envelope
   // Flap opens first: progress 0.80 to 0.85
   const flapProgress = Math.min(1, Math.max(0, (scrollProgress - 0.80) / 0.05))
@@ -37,6 +37,11 @@ const EnvelopeVisual = ({ scrollProgress }) => {
   const letterY = -80 * letterProgress
   const letterScale = 0.95 + 0.1 * letterProgress
   const letterOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.02))
+
+  // Extract display name from user's email if logged in
+  const displayName = user && user.email 
+    ? user.email.split('@')[0].split(/[._-]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+    : 'Candidate'
 
   return (
     <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 select-none">
@@ -77,7 +82,7 @@ const EnvelopeVisual = ({ scrollProgress }) => {
           <div className="space-y-2">
             <div className="text-center font-serif text-xs tracking-widest text-[#111] uppercase font-bold">Offer of Employment</div>
             <div className="font-serif text-[10px] text-[#555] space-y-2 leading-relaxed">
-              <p className="font-bold">Dear Candidate,</p>
+              <p className="font-bold">Dear {displayName},</p>
               <p>We are thrilled to offer you the role of <span className="text-[#2563EB] font-bold">Software Engineer</span>.</p>
               <p>Your skills, experience, and performance stood out exceptionally during our cohort evaluations.</p>
             </div>
@@ -707,7 +712,7 @@ export default function App() {
           {/* 06 PLACEMENT: Card Left, Text Right */}
           <section id="placement" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-8 order-2 md:order-1 flex justify-center pt-24 pb-24">
-               <EnvelopeVisual scrollProgress={scrollProgress} />
+               <EnvelopeVisual scrollProgress={scrollProgress} user={user} />
             </div>
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">06</div>
