@@ -51,10 +51,8 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
       rx = -Math.PI / 4 // Angle for eraser contact
     }
 
-    // Final sleep mode at the end
+    // Final sleep mode at the end (preserve exact path coordinates, only lie flat)
     if (s >= 0.99) {
-      x = 0
-      y = -3.4 // resting footer height (lower down)
       rx = 0
       ry = 0
       rz = -Math.PI / 2 // Flat horizontal below text

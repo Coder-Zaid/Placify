@@ -288,7 +288,7 @@ export default function App() {
               strokeLinecap="round"
               style={{ 
                 strokeDasharray: pathLength, 
-                strokeDashoffset: pathLength - (Math.max(0, scrollProgress - 0.004) * pathLength) 
+                strokeDashoffset: pathLength - (scrollProgress * pathLength) 
               }}
             />
           </svg>
