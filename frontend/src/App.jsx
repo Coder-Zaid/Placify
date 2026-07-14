@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, Suspense, lazy } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import axios from 'axios'
+import { X, Play, Sparkles, BookOpen, Code2, Award, Briefcase, ChevronRight } from 'lucide-react'
 
 import SmoothScroll from './components/SmoothScroll'
 import Scene3D from './components/Scene3D'
@@ -12,12 +13,10 @@ import { useToast } from './hooks/useToast'
 
 gsap.registerPlugin(ScrollTrigger)
 
-// Lazy loaded modules
 const BatchAnalysis = lazy(() => import('./components/BatchAnalysis'))
 const ResumeAnalyzer = lazy(() => import('./components/ResumeAnalyzer'))
 const InterviewModule = lazy(() => import('./components/InterviewModule'))
 
-// Configure global axios
 axios.defaults.baseURL = import.meta.env.PROD ? '' : 'http://localhost:8000';
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('placify_auth_token')
@@ -25,9 +24,74 @@ axios.interceptors.request.use((config) => {
   return config
 })
 
-// CSS-based UI Visuals for the right side
+// Highly Realistic Envelope and Letter Visual
+const EnvelopeVisual = () => {
+  const [isOpen, setIsOpen] = useState(false)
+  return (
+    <div 
+      className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 cursor-pointer"
+      onClick={() => setIsOpen(!isOpen)}
+    >
+      <motion.div 
+        className="absolute inset-0 bg-[#EBE5D8] rounded-xl shadow-2xl border border-black/10 flex items-center justify-center overflow-hidden"
+        animate={{ rotateY: isOpen ? 15 : 0, rotateX: isOpen ? 10 : 0 }}
+        transition={{ type: "spring", stiffness: 100 }}
+      >
+        {/* Decorative stamp in corner */}
+        <div className="absolute top-4 right-4 w-12 h-16 border-2 border-dashed border-red-800/40 p-1 flex items-center justify-center">
+          <div className="w-full h-full border border-red-800/20 bg-red-50/50 flex flex-col items-center justify-center font-serif text-[8px] text-red-800/60">
+            <span>OFFICIAL</span>
+            <span>STAMP</span>
+          </div>
+        </div>
+
+        {/* Outer Flap */}
+        <motion.div 
+          className="absolute top-0 left-0 w-full h-1/2 bg-[#DFD9CB] origin-top border-b border-black/10 z-20 flex justify-center items-end pb-4"
+          animate={{ rotateX: isOpen ? -140 : 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          {/* Wax Seal */}
+          <div className="w-10 h-10 rounded-full bg-red-700 shadow-md border-2 border-red-800 flex items-center justify-center transform translate-y-9 z-30">
+            <span className="text-white/60 font-serif text-xs font-bold">P</span>
+          </div>
+        </motion.div>
+
+        {/* Letter pulling out of envelope */}
+        <motion.div 
+          className="absolute w-[90%] h-[95%] bg-white shadow-xl rounded p-6 space-y-3 z-10 flex flex-col justify-between"
+          animate={{ y: isOpen ? -80 : 0, scale: isOpen ? 1.05 : 0.95 }}
+          transition={{ type: "spring", stiffness: 80, delay: isOpen ? 0.2 : 0 }}
+        >
+          <div className="space-y-2">
+            <div className="text-center font-serif text-xs tracking-widest text-[#111] uppercase font-bold">Offer of Employment</div>
+            <div className="w-full h-px bg-black/10"></div>
+            <div className="font-serif text-[10px] text-[#555] space-y-1">
+              <p className="font-bold">Dear Candidate,</p>
+              <p>We are thrilled to offer you the role of <span className="text-[#2563EB] font-bold">Software Engineer</span>.</p>
+              <p>Your skills, experience, and performance stood out exceptionally during our cohort evaluations.</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-end border-t border-black/5 pt-2">
+            <div className="text-[8px] font-mono text-[#555]">Date: July 14, 2026</div>
+            <div className="text-right">
+              <div className="font-serif italic text-xs text-[#111]">Signature</div>
+              <div className="w-16 h-px bg-black/40 ml-auto mt-1"></div>
+              <div className="text-[6px] text-gray-400">Placify Board</div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </div>
+  )
+}
+
 const NotebookVisual = () => (
-  <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000">
+  <motion.div 
+    whileHover={{ scale: 1.03 }}
+    className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000"
+  >
     <div className="absolute inset-0 bg-white shadow-2xl rounded-sm transform rotate-y-[-10deg] rotate-x-[20deg] rotate-z-[5deg] flex divide-x divide-black/10 border border-black/5">
       <div className="w-1/2 h-full p-6 space-y-4">
         <div className="w-3/4 h-2 bg-black/10 rounded"></div>
@@ -44,13 +108,15 @@ const NotebookVisual = () => (
         </div>
       </div>
     </div>
-  </div>
+  </motion.div>
 )
 
 const LaptopVisual = () => (
-  <div className="relative w-full aspect-[16/10] max-w-lg mx-auto">
+  <motion.div 
+    whileHover={{ y: -5 }}
+    className="relative w-full aspect-[16/10] max-w-lg mx-auto"
+  >
     <div className="absolute inset-x-8 top-0 bottom-6 bg-[#111] rounded-t-2xl p-3 shadow-2xl border-4 border-[#333]">
-      {/* Screen */}
       <div className="w-full h-full bg-[#1E1E1E] rounded-lg overflow-hidden flex flex-col font-mono text-xs">
         <div className="h-6 bg-[#2D2D2D] flex items-center px-3 gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
@@ -64,40 +130,18 @@ const LaptopVisual = () => (
         </div>
       </div>
     </div>
-    {/* Keyboard base */}
     <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-[#E0E0E0] to-[#B0B0B0] rounded-b-3xl shadow-xl border-t border-white/50 flex justify-center">
       <div className="w-1/4 h-1 bg-[#A0A0A0] mt-1 rounded-full"></div>
     </div>
-  </div>
+  </motion.div>
 )
-
-const EnvelopeVisual = () => (
-  <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000">
-    <div className="absolute inset-0 bg-[#F4F0E6] shadow-2xl rounded-sm transform rotate-y-[10deg] rotate-x-[10deg] flex items-center justify-center border border-black/5 overflow-hidden">
-      {/* Flap */}
-      <div className="absolute top-0 left-0 w-full h-1/2 bg-[#EBE5D8] origin-top transform rotate-x-[20deg] border-b border-black/10 z-20 flex justify-center items-end pb-4">
-        <div className="w-12 h-12 rounded-full bg-red-700/80 shadow-inner flex items-center justify-center">
-           <span className="text-white/50 text-xs font-serif">SEAL</span>
-        </div>
-      </div>
-      {/* Letter pulling out */}
-      <div className="absolute w-3/4 h-3/4 bg-white shadow-md top-4 z-10 p-6 space-y-4">
-        <div className="text-center font-serif text-xl tracking-widest text-black/80">OFFER LETTER</div>
-        <div className="w-full h-px bg-black/10"></div>
-        <div className="w-full h-2 bg-black/10 rounded"></div>
-        <div className="w-5/6 h-2 bg-black/10 rounded"></div>
-        <div className="text-blue-600 font-medium text-lg pt-4">Congratulations!</div>
-      </div>
-    </div>
-  </div>
-)
-
 
 export default function App() {
   const mainRef = useRef(null)
   const pathRef = useRef(null)
   const [user, setUser] = useState(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [isStoryOpen, setIsStoryOpen] = useState(false)
   const { toasts, addToast, removeToast } = useToast()
   
   const [resumeData, setResumeData] = useState({ jdText: '', resumeFile: null, resumeBase64: '', results: null, isLoading: false, error: '' })
@@ -107,8 +151,15 @@ export default function App() {
     offset: ["start start", "end end"]
   });
 
-  // Calculate the ball's Y position based on overall scroll
+  const [scrollProgress, setScrollProgress] = useState(0)
   const ballY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
+  useEffect(() => {
+    const unsubscribe = scrollYProgress.onChange((v) => {
+      setScrollProgress(v)
+    })
+    return () => unsubscribe()
+  }, [scrollYProgress])
 
   useEffect(() => {
     const token = localStorage.getItem('placify_auth_token')
@@ -117,7 +168,6 @@ export default function App() {
     if (token && email && role) setUser({ email, role, token })
 
     const ctx = gsap.context(() => {
-      // Draw the dashed line as we scroll
       gsap.to(pathRef.current, {
         strokeDashoffset: 0,
         ease: "none",
@@ -129,7 +179,6 @@ export default function App() {
         }
       })
 
-      // Fade up content
       gsap.utils.toArray('.content-reveal').forEach(el => {
         gsap.fromTo(el, 
           { opacity: 0, y: 40 },
@@ -143,13 +192,23 @@ export default function App() {
 
   return (
     <SmoothScroll>
-      <div ref={mainRef} className="relative min-h-screen font-display overflow-hidden selection:bg-[#2563EB] selection:text-white">
+      <div ref={mainRef} className="relative min-h-screen font-display overflow-hidden selection:bg-[#2563EB] selection:text-white bg-[#FAF7F0] bg-opacity-95">
+        
+        {/* Vintage Paper Texture and Fiber Overlay */}
+        <div className="fixed inset-0 z-[-99] pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,_transparent_0%,_#FAF7F0_80%)]" />
+        <div className="fixed inset-0 z-[-98] pointer-events-none opacity-5 mix-blend-multiply" 
+             style={{ 
+               backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 500 500\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' 
+             }} 
+        />
+
         <Toast toasts={toasts} onRemove={removeToast} />
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthSuccess={setUser} addToast={addToast} />
 
-        <Scene3D />
+        {/* 3D background elements canvas */}
+        <Scene3D scroll={scrollProgress} isMainPage={true} />
 
-        {/* Global Dotted Path Background */}
+        {/* Global Pencil Path Background */}
         <div className="absolute inset-0 pointer-events-none z-0 hidden md:block">
           <svg className="w-full h-full" preserveAspectRatio="none">
             <path 
@@ -158,28 +217,10 @@ export default function App() {
               stroke="#2563EB" 
               strokeWidth="2.5" 
               fill="none" 
-              className="opacity-60"
-              style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }} // Controlled dynamically via GSAP
+              className="opacity-40"
+              style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }}
             />
           </svg>
-        </div>
-
-        {/* The Traveling Pencil leaving behind a path */}
-        <div className="fixed top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] pointer-events-none z-50 hidden md:block">
-           <motion.div 
-             className="absolute w-12 h-12 -ml-6 -mt-6 origin-bottom-left"
-             style={{ 
-               top: ballY,
-               rotate: -35
-             }}
-           >
-             <svg className="w-full h-full drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-               <path d="M18 2L22 6L9 19H5V15L18 2Z" fill="#E0A96D" stroke="#111" strokeWidth="1.5"/>
-               <path d="M5 15L9 19L3 21L5 15Z" fill="#E8DCC4" stroke="#111" strokeWidth="1.5"/>
-               <path d="M3 21L4.5 19.5" stroke="#111" strokeWidth="1.5"/>
-               <path d="M16 4L20 8" stroke="#111" strokeWidth="1.5"/>
-             </svg>
-           </motion.div>
         </div>
 
         {/* Header */}
@@ -219,7 +260,12 @@ export default function App() {
             </p>
             <div className="flex gap-4">
               <button className="btn-primary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98">Start Your Journey</button>
-              <button className="btn-secondary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98">Watch the Story</button>
+              <button 
+                onClick={() => setIsStoryOpen(true)}
+                className="btn-secondary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98"
+              >
+                Watch the Story
+              </button>
             </div>
             
             <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-12 text-[#555555]">
@@ -237,14 +283,14 @@ export default function App() {
               <h2 className="text-4xl font-bold">School</h2>
               <p className="text-[#555555] text-lg">Every expert once struggled with the basics.</p>
             </div>
-            <div className="md:col-span-8 flex justify-center hover:scale-102 transition-transform duration-300">
+            <div className="md:col-span-8 flex justify-center">
               <NotebookVisual />
             </div>
           </section>
 
           {/* 02 COLLEGE: Card Left, Text Right */}
           <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-8 order-2 md:order-1 flex justify-center hover:scale-102 transition-transform duration-300">
+            <div className="md:col-span-8 order-2 md:order-1 flex justify-center">
               <LaptopVisual />
             </div>
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
@@ -263,24 +309,31 @@ export default function App() {
             </div>
             <div className="md:col-span-8 flex justify-center gap-4 perspective-1000">
               {[1, 2, 3].map(i => (
-                <div key={i} className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] hover:rotate-y-[0deg] transition-transform duration-500 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}>
+                <motion.div 
+                  key={i} 
+                  whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
+                  className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}
+                >
                   <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold">C{i}</div>
                   <div className="space-y-2">
                     <div className="w-full h-2 bg-black/10 rounded"></div>
                     <div className="w-2/3 h-2 bg-black/5 rounded"></div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
 
           {/* 04 RESUME INTELLIGENCE: Card Left, Text Right */}
           <section id="resume" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-8 order-2 md:order-1 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden max-h-[600px] overflow-y-auto">
+            <motion.div 
+              whileHover={{ scale: 1.01 }}
+              className="md:col-span-8 order-2 md:order-1 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden max-h-[600px] overflow-y-auto"
+            >
               <Suspense fallback={<div>Loading Analyzer...</div>}>
                 <ResumeAnalyzer apiKey="" data={resumeData} updateData={setResumeData} addToast={addToast} />
               </Suspense>
-            </div>
+            </motion.div>
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">04</div>
               <h2 className="text-4xl font-bold text-balance">Resume Intelligence</h2>
@@ -295,16 +348,19 @@ export default function App() {
               <h2 className="text-4xl font-bold text-balance">Interview Practice</h2>
               <p className="text-[#555555] text-lg">Practice until confidence becomes natural.</p>
             </div>
-            <div className="md:col-span-8 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 min-h-[400px]">
+            <motion.div 
+              whileHover={{ scale: 1.01 }}
+              className="md:col-span-8 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 min-h-[400px]"
+            >
               <Suspense fallback={<div>Loading Practice...</div>}>
                 <InterviewModule addToast={addToast} />
               </Suspense>
-            </div>
+            </motion.div>
           </section>
 
           {/* 06 PLACEMENT: Card Left, Text Right */}
           <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-8 order-2 md:order-1 flex justify-center hover:scale-102 transition-transform duration-300">
+            <div className="md:col-span-8 order-2 md:order-1 flex justify-center">
                <EnvelopeVisual />
             </div>
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
@@ -315,7 +371,7 @@ export default function App() {
           </section>
 
           {/* FOOTER */}
-          <footer className="text-center pt-32 pb-16 space-y-16 content-reveal">
+          <footer className="text-center pt-32 pb-32 space-y-16 content-reveal">
             <div className="inline-block transform -rotate-3 text-5xl md:text-7xl relative px-4">
               <span className="font-serif italic text-[#2563EB]">Y</span>ou Write <br/> the{' '}
               <span className="relative inline-block">
@@ -360,6 +416,60 @@ export default function App() {
             </div>
           </footer>
         </div>
+
+        {/* Watch Story Modal */}
+        <AnimatePresence>
+          {isStoryOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                className="w-full max-w-lg bg-[#FAF7F0] rounded-2xl p-8 relative border border-black/5 shadow-2xl"
+              >
+                <button 
+                  onClick={() => setIsStoryOpen(false)}
+                  className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#2563EB]" />
+                    <h3 className="font-bold text-xl">The Placify Narrative</h3>
+                  </div>
+                  <div className="space-y-4 text-sm text-[#555] font-serif leading-relaxed">
+                    <div className="flex gap-3">
+                      <div className="font-bold text-[#111] min-w-[50px]">School:</div>
+                      <p>Mastering core syntax, algorithms, and setting up the dream repository.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="font-bold text-[#111] min-w-[50px]">College:</div>
+                      <p>Building real apps, shipping code, and working through the nights.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="font-bold text-[#111] min-w-[50px]">Placify:</div>
+                      <p>Optimizing metrics, refining candidate resumes, and passing the interviews.</p>
+                    </div>
+                  </div>
+                  <div className="pt-4">
+                    <button 
+                      onClick={() => setIsStoryOpen(false)}
+                      className="btn-primary w-full py-3"
+                    >
+                      Start Journey
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </SmoothScroll>
   )
