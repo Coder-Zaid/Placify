@@ -93,7 +93,7 @@ const NotebookVisual = () => {
     hidden: {},
     visible: {
       transition: {
-        staggerChildren: 0.08
+        staggerChildren: 0.05
       }
     }
   }
@@ -103,6 +103,23 @@ const NotebookVisual = () => {
     visible: { opacity: 1 }
   }
 
+  // Dynamically generate Fay's Butterfly Curve path points (Polar: r = e^sin(t) - 2cos(4t) + sin^5(t/12))
+  const generateButterflyPath = () => {
+    const points = []
+    // 0 to 4*pi creates the dual layered wings beautifully
+    for (let t = 0; t <= 4 * Math.PI; t += 0.05) {
+      const r = Math.exp(Math.sin(t)) - 2 * Math.cos(4 * t) + Math.pow(Math.sin(t / 12), 5)
+      // Polar to Cartesian
+      const x = r * Math.cos(t)
+      const y = r * Math.sin(t)
+      // Center and scale to fit SVG viewport 100x80
+      points.push(`${(50 + x * 6.5).toFixed(1)},${(40 - y * 6.5).toFixed(1)}`)
+    }
+    return `M ${points.join(' L ')}`
+  }
+
+  const butterflyPath = generateButterflyPath()
+
   return (
     <motion.div 
       whileHover={{ scale: 1.03 }}
@@ -110,57 +127,72 @@ const NotebookVisual = () => {
     >
       <div className="absolute inset-0 bg-white shadow-2xl rounded-sm transform rotate-y-[-10deg] rotate-x-[20deg] rotate-z-[5deg] flex divide-x divide-black/10 border border-black/5">
         
-        {/* Left Page (Formula Writing) */}
-        <div className="w-1/2 h-full p-6 space-y-4">
-          <div className="w-3/4 h-2 bg-black/10 rounded"></div>
-          <div className="w-full h-2 bg-black/5 rounded"></div>
-          <div className="w-5/6 h-2 bg-black/5 rounded"></div>
+        {/* Left Page: Polar Equation Formula Writing */}
+        <div className="w-1/2 h-full p-6 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="w-3/4 h-2 bg-black/10 rounded"></div>
+            <div className="w-full h-2 bg-black/5 rounded"></div>
+            <div className="w-5/6 h-2 bg-black/5 rounded"></div>
+          </div>
           
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, margin: "-50px" }}
-            className="font-serif italic text-blue-600 text-lg mt-8 select-none"
-          >
-            {Array.from("f(x) = ax² + bx + c").map((char, idx) => (
-              <motion.span key={idx} variants={letterVariants}>
-                {char}
-              </motion.span>
-            ))}
-          </motion.div>
+          <div className="my-auto space-y-4">
+            <div className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">Polar Function</div>
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: false, margin: "-50px" }}
+              className="font-serif italic text-blue-600 text-xs select-none leading-relaxed"
+            >
+              {Array.from("r = e^sin(θ) - 2cos(4θ) + sin⁵(θ/12)").map((char, idx) => (
+                <motion.span key={idx} variants={letterVariants}>
+                  {char}
+                </motion.span>
+              ))}
+            </motion.div>
+          </div>
+          
+          <div className="w-full h-1 bg-black/5 rounded"></div>
         </div>
 
-        {/* Right Page (Parabola Graph Drawing) */}
-        <div className="w-1/2 h-full p-6 space-y-4 relative">
+        {/* Right Page: Concentric Polar Grid & Butterfly Draw */}
+        <div className="w-1/2 h-full p-4 relative flex flex-col justify-between">
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/5 to-transparent"></div>
-          <div className="w-full h-2 bg-black/10 rounded"></div>
-          <div className="w-4/5 h-2 bg-black/5 rounded"></div>
           
-          {/* Coordinates Grid and Parabola curve */}
-          <div className="w-full h-32 border-2 border-dashed border-black/10 rounded-xl mt-4 flex items-center justify-center overflow-hidden">
-            <svg className="w-full h-full p-2" viewBox="0 0 100 80">
-              {/* Axes */}
-              <line x1="10" y1="50" x2="90" y2="50" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
-              <line x1="50" y1="10" x2="50" y2="70" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+          <div className="w-full h-2 bg-black/10 rounded"></div>
+          
+          {/* Polar Grid Container */}
+          <div className="w-full h-36 border border-dashed border-black/10 rounded-lg flex items-center justify-center overflow-hidden bg-gray-50/30">
+            <svg className="w-full h-full p-1" viewBox="0 0 100 80">
+              {/* Concentric Polar Grid Circles */}
+              <circle cx="50" cy="40" r="10" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5" fill="none" />
+              <circle cx="50" cy="40" r="20" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5" fill="none" />
+              <circle cx="50" cy="40" r="30" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5" fill="none" />
+              <circle cx="50" cy="40" r="38" stroke="rgba(0,0,0,0.06)" strokeWidth="0.5" fill="none" />
               
-              {/* Arrowheads */}
-              <path d="M 90,48 L 94,50 L 90,52 Z" fill="rgba(0,0,0,0.15)" />
-              <path d="M 48,10 L 50,6 L 52,10 Z" fill="rgba(0,0,0,0.15)" />
+              {/* Polar Axis Lines */}
+              <line x1="50" y1="2" x2="50" y2="78" stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
+              <line x1="12" y1="40" x2="88" y2="40" stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
+              
+              {/* Diagonal Angle Guides */}
+              <line x1="23.2" y1="13.2" x2="76.8" y2="66.8" stroke="rgba(0,0,0,0.04)" strokeWidth="0.5" />
+              <line x1="23.2" y1="66.8" x2="76.8" y2="13.2" stroke="rgba(0,0,0,0.04)" strokeWidth="0.5" />
 
-              {/* Animating Parabola Curve */}
+              {/* Animating Butterfly Curve */}
               <motion.path 
-                d="M 20,70 Q 50,15 80,70" 
+                d={butterflyPath} 
                 stroke="#2563EB" 
-                strokeWidth="2" 
+                strokeWidth="1" 
                 fill="none"
                 initial={{ pathLength: 0 }}
                 whileInView={{ pathLength: 1 }}
                 viewport={{ once: false, margin: "-50px" }}
-                transition={{ delay: 1.5, duration: 1.5, ease: "easeInOut" }}
+                transition={{ delay: 1.0, duration: 3.5, ease: "easeInOut" }}
               />
             </svg>
           </div>
+
+          <div className="w-2/3 h-2 bg-black/5 rounded"></div>
         </div>
 
       </div>
