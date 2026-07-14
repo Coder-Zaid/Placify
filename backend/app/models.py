@@ -1,10 +1,15 @@
 from pydantic import BaseModel
 from typing import List, Optional
-import io
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy.orm import relationship
+import datetime
+from .database import Base
 
+# ============================================================================
+# PYDANTIC MODEL SCHEMAS
+# ============================================================================
 
 class StudentRecord(BaseModel):
-    """Single student record"""
     roll_number: str
     name: str
     branch: str
@@ -14,24 +19,18 @@ class StudentRecord(BaseModel):
     has_portfolio: bool
     active_backlogs: int
 
-
 class BatchAnalysisRequest(BaseModel):
-    """Request body for batch analysis"""
     jd_text: str
-    csv_data: str  # CSV as string
-    api_key: str  # Gemini API key from frontend
-
+    csv_data: str
+    api_key: str
 
 class BatchAnalysisResponse(BaseModel):
-    """Response from batch analysis"""
     readiness_score: str
     is_eligible: str
     missing_skills: str
     ai_insight: str
 
-
 class PillarBreakdown(BaseModel):
-    """Pillar scores breakdown (6 pillars)"""
     skills: float
     academics: float
     corporate_readiness: float
@@ -39,27 +38,23 @@ class PillarBreakdown(BaseModel):
     portfolio: float
     ai_growth: float
 
-
 class WeightProfile(BaseModel):
-    """Weight profile based on JD type"""
     skills: int
     academic: int
     portfolio: int
     aptitude: int
     ai: int
 
-
 class StudentAnalysisResult(BaseModel):
-    """Complete analysis result for a student"""
     name: str
     roll_number: str
     cgpa: float
     eligible: bool
     fail_reason: str = ""
-    gate_type: str = ""  # "backlog", "cgpa", "skill_mismatch", or ""
+    gate_type: str = ""
     final_score: float
-    tier: str  # "Qualified", "Potential", "Needs Training"
-    jd_type: str  # "service_based", "product_based", "academic", "balanced"
+    tier: str
+    jd_type: str
     jd_type_description: str
     present_skills: List[str]
     missing_skills: List[str]
@@ -69,24 +64,58 @@ class StudentAnalysisResult(BaseModel):
     portfolio_multiplier: float = 1.0
     aptitude_bonus_applied: bool = False
     pillar_breakdown: PillarBreakdown
-    confidence_level: str  # "High", "Medium", "Low"
+    confidence_level: str
     confidence_note: str
     ai_insight: str
     growth_reasoning: str
 
-
 class ResumeAnalysisRequest(BaseModel):
-    """Request body for resume analysis"""
     jd_text: str
-    resume_base64: str  # Base64 encoded PDF
-    api_key: str  # Gemini API key from frontend
-
+    resume_base64: str
+    api_key: str
 
 class ResumeAnalysisResponse(BaseModel):
-    """Response from resume analysis"""
     overall_score: str
     recommendation: str
     strengths: List[str]
     gaps: List[str]
     detailed_feedback: str
     pillar_breakdown: Optional[PillarBreakdown] = None
+
+class UserRegister(BaseModel):
+    email: str
+    password: str
+    role: str = "student" # "student" or "admin"
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+# ============================================================================
+# SQLALCHEMY DATABASE MODELS
+# ============================================================================
+
+class DBUser(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="student")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    
+    analyses = relationship("DBAnalysisHistory", back_populates="user")
+
+class DBAnalysisHistory(Base):
+    __tablename__ = "analysis_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    jd_text = Column(String, nullable=False)
+    student_name = Column(String, nullable=False)
+    score = Column(Float, nullable=False)
+    recommendation = Column(String, nullable=False)
+    analysis_type = Column(String, nullable=False) # "resume" or "batch"
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    
+    user = relationship("DBUser", back_populates="analyses")

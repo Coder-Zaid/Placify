@@ -1,7 +1,23 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
 import Toast from './components/Toast'
+import AuthModal from './components/AuthModal'
 import { useToast } from './hooks/useToast'
-import { Award, Layers, ShieldCheck, ArrowRight, Settings, X } from 'lucide-react'
+import { Award, Layers, ShieldCheck, ArrowRight, Settings, X, Lock } from 'lucide-react'
+import axios from 'axios'
+
+// Configure global axios base URL to relative or localhost backup
+axios.defaults.baseURL = import.meta.env.PROD ? '' : 'http://localhost:8000';
+
+// Configure axios interceptor to attach Bearer token automatically if available
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('placify_auth_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+}, (error) => {
+  return Promise.reject(error)
+})
 
 // Lazy loaded modules
 const BatchAnalysis = lazy(() => import('./components/BatchAnalysis'))
@@ -14,6 +30,10 @@ export default function App() {
   const [tempKey, setTempKey] = useState('')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   
+  // Auth state
+  const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [user, setUser] = useState(null)
+
   // Batch Analysis State
   const [batchData, setBatchData] = useState({
     jdText: '',
@@ -43,6 +63,14 @@ export default function App() {
       const savedBatchData = localStorage.getItem('placify_batch_data')
       const savedResumeData = localStorage.getItem('placify_resume_data')
       const savedApiKey = localStorage.getItem('placify_api_key')
+      
+      const token = localStorage.getItem('placify_auth_token')
+      const email = localStorage.getItem('placify_user_email')
+      const role = localStorage.getItem('placify_user_role')
+      
+      if (token && email && role) {
+        setUser({ email, role, token })
+      }
       
       if (savedBatchData) {
         const parsed = JSON.parse(savedBatchData)
@@ -92,7 +120,7 @@ export default function App() {
     }
   }, [batchData.jdText, batchData.csvText, batchData.results])
 
-  // Persist resume data to localStorage
+  // ... rest of useeffects ...
   useEffect(() => {
     try {
       const dataToPersist = {
@@ -106,7 +134,6 @@ export default function App() {
     }
   }, [resumeData.jdText, resumeData.resumeBase64, resumeData.results])
 
-  // Persist API key
   useEffect(() => {
     if (isApiActive && apiKey) {
       localStorage.setItem('placify_api_key', apiKey)
@@ -114,7 +141,7 @@ export default function App() {
   }, [apiKey, isApiActive])
 
   const handleVerifyApiKey = () => {
-    const cleanKey = tempKey.strip ? tempKey.strip() : tempKey.trim()
+    const cleanKey = tempKey.trim()
     if (cleanKey.startsWith('AIza') || cleanKey.startsWith('sk-') || cleanKey.startsWith('gsk_')) {
       setApiKey(cleanKey)
       setIsApiActive(true)
@@ -133,6 +160,18 @@ export default function App() {
     }
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('placify_auth_token')
+    localStorage.removeItem('placify_user_email')
+    localStorage.removeItem('placify_user_role')
+    setUser(null)
+    setActiveTab('home')
+    addToast('Successfully signed out of the platform.', {
+      type: 'info',
+      title: 'Signed Out'
+    })
+  }
+
   const updateBatchData = (updates) => {
     setBatchData(prev => ({ ...prev, ...updates }))
   }
@@ -141,16 +180,51 @@ export default function App() {
     setResumeData(prev => ({ ...prev, ...updates }))
   }
 
+  // Helper check for tabs
+  const handleTabChange = (tabName) => {
+    if (tabName === 'home') {
+      setActiveTab('home')
+      return
+    }
+
+    if (!user) {
+      setIsAuthOpen(true)
+      addToast('Authentication required to access analysis modules.', {
+        type: 'info',
+        title: 'Access Restricted'
+      })
+      return
+    }
+
+    if (tabName === 'batch' && user.role !== 'admin') {
+      addToast('Institution role required to access Batch Eligibility scoring.', {
+        type: 'error',
+        title: 'Unauthorized Action'
+      })
+      return
+    }
+
+    setActiveTab(tabName)
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F0F11] font-display antialiased">
       {/* Toast Container */}
       <Toast toasts={toasts} onRemove={removeToast} />
 
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onAuthSuccess={setUser}
+        addToast={addToast}
+      />
+
       {/* Header */}
       <header className="border-b border-[#0F0F11]/10 bg-white sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
           <button 
-            onClick={() => setActiveTab('home')}
+            onClick={() => handleTabChange('home')}
             className="flex items-center gap-4 text-left focus:outline-none"
           >
             <div className="w-10 h-10 bg-[#0F0F11] rounded-[10px] flex items-center justify-center hover-scale">
@@ -164,24 +238,45 @@ export default function App() {
           
           <div className="flex items-center gap-6">
             <button 
-              onClick={() => setActiveTab('home')}
+              onClick={() => handleTabChange('home')}
               className={`text-sm font-medium transition-colors ${activeTab === 'home' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
             >
               Home
             </button>
             <button 
-              onClick={() => setActiveTab('batch')}
-              className={`text-sm font-medium transition-colors ${activeTab === 'batch' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
+              onClick={() => handleTabChange('batch')}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'batch' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
             >
+              {!user && <Lock className="h-3 w-3 text-[#A8A8AE]" />}
               Batch Analysis
             </button>
             <button 
-              onClick={() => setActiveTab('resume')}
-              className={`text-sm font-medium transition-colors ${activeTab === 'resume' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
+              onClick={() => handleTabChange('resume')}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'resume' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
             >
+              {!user && <Lock className="h-3 w-3 text-[#A8A8AE]" />}
               Resume Screening
             </button>
             
+            {user ? (
+              <div className="flex items-center gap-4 border-l border-[#0F0F11]/10 pl-6">
+                <span className="text-xs font-mono text-[#6F6F75]">{user.email} ({user.role})</span>
+                <button 
+                  onClick={handleLogout}
+                  className="text-xs font-medium text-[#0F0F11] hover:underline"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsAuthOpen(true)}
+                className="btn-outline py-2 px-4 text-xs hover-scale"
+              >
+                Sign In
+              </button>
+            )}
+
             {/* Cogwheel Settings Toggle */}
             <button 
               onClick={() => setIsSettingsOpen(true)}
@@ -194,7 +289,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Settings Modal (Overlay for Cogwheel settings) */}
+      {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-[#0F0F11]/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div 
@@ -257,13 +352,13 @@ export default function App() {
               
               <div className="flex flex-wrap gap-4 pt-4">
                 <button 
-                  onClick={() => setActiveTab('batch')}
+                  onClick={() => handleTabChange('batch')}
                   className="btn-primary hover-scale"
                 >
                   Analyze Student Batch
                 </button>
                 <button 
-                  onClick={() => setActiveTab('resume')}
+                  onClick={() => handleTabChange('resume')}
                   className="btn-secondary hover-scale"
                 >
                   Screen Single Resume
@@ -294,7 +389,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Module 1: Batch Analysis */}
-                <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => setActiveTab('batch')}>
+                <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => handleTabChange('batch')}>
                   <div className="space-y-6">
                     <div className="w-12 h-12 rounded-[10px] border border-[#0F0F11]/15 flex items-center justify-center">
                       <Layers className="h-5 w-5 text-[#0F0F11] stroke-[1.5]" />
@@ -312,7 +407,7 @@ export default function App() {
                 </div>
 
                 {/* Module 2: Single Resume Analysis */}
-                <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => setActiveTab('resume')}>
+                <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => handleTabChange('resume')}>
                   <div className="space-y-6">
                     <div className="w-12 h-12 rounded-[10px] border border-[#0F0F11]/15 flex items-center justify-center">
                       <Award className="h-5 w-5 text-[#0F0F11] stroke-[1.5]" />

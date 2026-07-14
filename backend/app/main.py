@@ -6,8 +6,13 @@ import os
 # Load environment variables
 load_dotenv()
 
+# Import database configuration
+from .database import engine, Base
+# Bind metadata and create tables on startup
+Base.metadata.create_all(bind=engine)
+
 # Import routes
-from .routes import analyze
+from .routes import analyze, auth_routes
 
 # Create FastAPI app
 app = FastAPI(
@@ -37,6 +42,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(analyze.router)
+app.include_router(auth_routes.router)
 
 
 @app.get("/")
