@@ -177,14 +177,26 @@ export default function App() {
     return () => unsubscribe()
   }, [scrollYProgress])
 
-  // Scroll active/idle state listener
+  const [scrollDirection, setScrollDirection] = useState('down')
+  const lastScrollY = useRef(0)
+
+  // Scroll active/idle state and direction listener
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolling(true)
+      
+      const currentScrollY = window.scrollY
+      if (currentScrollY > lastScrollY.current) {
+        setScrollDirection('down')
+      } else if (currentScrollY < lastScrollY.current) {
+        setScrollDirection('up')
+      }
+      lastScrollY.current = currentScrollY
+
       clearTimeout(scrollTimeout.current)
       scrollTimeout.current = setTimeout(() => {
         setIsScrolling(false)
-      }, 200) // resting trigger after 200ms of inactivity
+      }, 200)
     }
     window.addEventListener('scroll', handleScroll)
     return () => {
@@ -246,7 +258,7 @@ export default function App() {
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthSuccess={setUser} addToast={addToast} />
 
         {/* 3D background elements canvas */}
-        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} isMainPage={true} />
+        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} isMainPage={true} />
 
         {/* Global Pencil Path Background */}
         <div className="absolute inset-0 pointer-events-none z-0 hidden md:block">
@@ -259,7 +271,7 @@ export default function App() {
               fill="none" 
               className="opacity-70"
               style={{ 
-                strokeDasharray: "8 2000", // Leaves a short 8-unit temporary trail behind the pencil tip
+                strokeDasharray: "2000", 
                 strokeDashoffset: 2000 - (scrollProgress * 2000) 
               }}
             />
@@ -446,24 +458,75 @@ export default function App() {
 
           {/* FOOTER */}
           <footer id="footer" className="text-center pt-32 pb-32 space-y-16 content-reveal">
-            <div className="inline-block transform -rotate-3 text-5xl md:text-7xl relative px-4">
-              <span className="font-serif italic text-[#2563EB]">Y</span>ou Write <br/> the{' '}
-              <span className="relative inline-block">
-                future.
-                <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#2563EB]" viewBox="0 0 100 10" preserveAspectRatio="none">
-                  <motion.path 
-                    d="M0,5 Q50,0 100,5" 
-                    stroke="currentColor" 
-                    strokeWidth="3" 
-                    fill="none"
-                    initial={{ pathLength: 0 }}
-                    whileInView={{ pathLength: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1.2, ease: "easeOut" }}
-                  />
-                </svg>
-              </span>
-            </div>
+            <motion.div 
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.06 } }
+              }}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              className="inline-block transform -rotate-3 text-5xl md:text-7xl relative px-4 select-none font-bold"
+            >
+              {/* "You Write" word animation */}
+              <div className="block">
+                {Array.from("You Write").map((char, index) => (
+                  <motion.span
+                    key={index}
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                    className={char === "Y" ? "font-serif italic text-[#2563EB]" : ""}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </div>
+              
+              {/* "the future." word animation */}
+              <div className="block">
+                {Array.from("the ").map((char, index) => (
+                  <motion.span
+                    key={index}
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      visible: { opacity: 1, y: 0 }
+                    }}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+                
+                <span className="relative inline-block">
+                  {Array.from("future.").map((char, index) => (
+                    <motion.span
+                      key={index}
+                      variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: { opacity: 1, y: 0 }
+                      }}
+                    >
+                      {char}
+                    </motion.span>
+                  ))}
+                  
+                  {/* Underline drawn after text letters appear */}
+                  <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#2563EB]" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <motion.path 
+                      d="M0,5 Q50,0 100,5" 
+                      stroke="currentColor" 
+                      strokeWidth="3" 
+                      fill="none"
+                      initial={{ pathLength: 0 }}
+                      whileInView={{ pathLength: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.8, duration: 1.0, ease: "easeOut" }}
+                    />
+                  </svg>
+                </span>
+              </div>
+            </motion.div>
             
             <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start text-left border-t border-black/10 pt-16 gap-12 text-[#555555]">
               <div className="space-y-4">

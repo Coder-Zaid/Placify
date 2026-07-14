@@ -4,58 +4,59 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { Pencil, Notebook, GradCap, Laptop, PaperBall } from './Models3D'
 
-function MovingPencil({ scroll, isScrolling }) {
+function MovingPencil({ scroll, isScrolling, scrollDirection }) {
   const ref = useRef()
 
   // Calculate target positions based on scroll percent (0 to 1)
   const getTargets = (s) => {
     let x = 0
-    let y = 1
+    let y = 3.5 - 7 * s // Moves Y from top to bottom viewport to track drawing tip
     let z = 0
     let rx = Math.PI / 4
     let ry = 0
     let rz = Math.PI / 6
 
+    // Synchronize X coordinates with SVG path weaving:
     if (s < 0.15) {
       const t = s / 0.15
-      x = 3.5 - 7 * t
-      y = 1.5 - 0.5 * t
-      rz = Math.PI / 4 - (Math.PI / 2) * t
+      x = 0 + 2.5 * t // Center to Right
+      rz = Math.PI / 4 - (Math.PI / 3) * t
     } else if (s < 0.3) {
       const t = (s - 0.15) / 0.15
-      x = -3.5 + 7 * t
-      y = 1 - 0.5 * t
-      rz = -Math.PI / 4 + (Math.PI / 2) * t
+      x = 2.5 - 5 * t // Right to Left
+      rz = -Math.PI / 12 + (Math.PI / 3) * t
     } else if (s < 0.45) {
       const t = (s - 0.3) / 0.15
-      x = 3.5 - 7 * t
-      y = 0.5 - 0.5 * t
-      rz = Math.PI / 4 - (Math.PI / 2) * t
+      x = -2.5 + 5 * t // Left to Right
+      rz = Math.PI / 4 - (Math.PI / 3) * t
     } else if (s < 0.6) {
       const t = (s - 0.45) / 0.15
-      x = -3.5 + 7 * t
-      y = 0 - 0.5 * t
-      rz = -Math.PI / 4 + (Math.PI / 2) * t
+      x = 2.5 - 5 * t // Right to Left
+      rz = -Math.PI / 12 + (Math.PI / 3) * t
     } else if (s < 0.75) {
       const t = (s - 0.6) / 0.15
-      x = 3.5 - 7 * t
-      y = -0.5 - 0.5 * t
-      rz = Math.PI / 4 - (Math.PI / 2) * t
+      x = -2.5 + 5 * t // Left to Right
+      rz = Math.PI / 4 - (Math.PI / 3) * t
     } else if (s < 0.9) {
       const t = (s - 0.75) / 0.15
-      x = -3.5 + 7 * t
-      y = -1 - 0.5 * t
-      rz = -Math.PI / 4 + (Math.PI / 2) * t
+      x = 2.5 - 2.5 * t // Right to Center
+      rz = -Math.PI / 12 + (Math.PI / 3) * t
     } else {
       const t = Math.min(1, (s - 0.9) / 0.1)
-      x = 3.5 - 3.5 * t // Centers horizontally
-      y = -1.5 - 2.0 * t // Drops down to -3.5 (resting visible area)
+      x = 0
+      y = -2.8 // resting y height
       rx = 0
       ry = 0
-      rz = -Math.PI / 2
+      rz = -Math.PI / 2 // Flat horizontal
     }
 
-    // When scrolling stops, pencil sleeps flat at the bottom of the visible screen viewport
+    // Erasing rotation flip when scrolling up
+    if (scrollDirection === 'up' && s < 0.9) {
+      rz += Math.PI // Flip pencil 180 degrees so eraser points down
+      rx = -Math.PI / 4 // Angle for eraser contact
+    }
+
+    // When scrolling stops, pencil sleeps flat at bottom of current visible screen
     if (!isScrolling && s < 0.9) {
       y = -3.3 // Safe visible height for resting
       rx = 0
@@ -122,7 +123,7 @@ function HeroProps({ scroll }) {
   )
 }
 
-export default function Scene3D({ scroll = 0, isScrolling = false, isMainPage = true }) {
+export default function Scene3D({ scroll = 0, isScrolling = false, scrollDirection = 'down', isMainPage = true }) {
   if (!isMainPage) return null
 
   return (
@@ -142,7 +143,7 @@ export default function Scene3D({ scroll = 0, isScrolling = false, isMainPage = 
         <HeroProps scroll={scroll} />
 
         {/* The active 3D pencil guided by page scroll and resting when idle */}
-        <MovingPencil scroll={scroll} isScrolling={isScrolling} />
+        <MovingPencil scroll={scroll} isScrolling={isScrolling} scrollDirection={scrollDirection} />
 
         <ContactShadows position={[0, -8, 0]} opacity={0.25} scale={30} blur={3} far={15} />
       </Canvas>
