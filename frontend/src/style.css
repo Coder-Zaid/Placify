@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    --color-background: #FAF9F7;
+    --color-background: #FAF7F0;
     --color-surface: #FFFFFF;
     --color-primary: #111111;
-    --color-secondary: #666666;
+    --color-secondary: #555555;
     --color-tertiary: #A1A1AA;
-    --color-accent: #0F62FE;
-    --color-success: #0BA360;
+    --color-accent: #2563EB;
+    --color-success: #16A34A;
     
     --radius-sm: 12px;
     --radius-md: 20px;
@@ -27,14 +27,13 @@
   body {
     @apply bg-[var(--color-background)] text-[var(--color-primary)] antialiased;
     font-family: 'Inter', sans-serif;
-    /* Soft paper texture overlay */
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    /* Soft paper texture overlay with graphite smudges logic */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
     background-attachment: fixed;
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6, .font-heading {
-    /* Using General Sans / Satoshi alternative */
     font-family: 'Satoshi', 'General Sans', 'Inter', sans-serif;
     letter-spacing: -0.02em;
   }
@@ -42,7 +41,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20;
+    @apply bg-white/40 backdrop-blur-xl border border-white/40;
     box-shadow: var(--shadow-premium);
   }
   
@@ -64,7 +63,7 @@
   }
 }
 
-/* Custom Scrollbar (Lenis handles main smooth scroll, this is for inner areas) */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -92,12 +91,10 @@
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center bg-white text-[var(--color-primary)] font-medium rounded-full px-6 py-3 transition-all duration-300 border border-black/10;
-  box-shadow: var(--shadow-premium);
+  @apply inline-flex items-center justify-center bg-transparent text-[var(--color-primary)] font-medium rounded-full px-6 py-3 transition-all duration-300 border border-black/10;
 }
 .btn-secondary:hover {
-  @apply border-black/20 bg-gray-50;
-  transform: translateY(-1px);
+  @apply border-black/20 bg-black/5;
 }
 .btn-secondary:active {
   transform: scale(0.98);

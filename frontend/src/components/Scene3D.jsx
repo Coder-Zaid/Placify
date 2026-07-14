@@ -1,58 +1,33 @@
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { Environment, ContactShadows, PresentationControls } from '@react-three/drei'
-import { Pencil, Notebook, Laptop, GradCap, PaperSheets, ParticleSystem } from './Models3D'
-import * as THREE from 'three'
-import { useRef } from 'react'
+import { Pencil, Notebook, GradCap, Laptop, PaperBall } from './Models3D'
 
-function CameraRig() {
-  const group = useRef()
-  useFrame((state) => {
-    group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, (window.scrollY * -0.002), 0.05)
-  })
-  return <group ref={group} />
-}
-
-export default function Scene3D({ scrollProgress = 0, currentSection = 'hero' }) {
-  
+export default function Scene3D() {
   return (
-    <div className="fixed inset-0 z-[-10] pointer-events-none opacity-40">
-      <Canvas shadows camera={{ position: [0, 0, 15], fov: 35 }}>
-        <color attach="background" args={['#FAF9F7']} />
-        
-        <ambientLight intensity={0.5} />
+    <div className="fixed inset-0 z-[-100] pointer-events-none w-full h-full">
+      <Canvas shadows camera={{ position: [0, 0, 20], fov: 35 }}>
+        <ambientLight intensity={0.6} />
         <directionalLight 
-          position={[10, 10, 5]} 
-          intensity={1.5} 
+          position={[10, 10, 10]} 
+          intensity={1.2} 
           castShadow 
-          shadow-mapSize={[1024, 1024]} 
+          shadow-mapSize-width={1024} 
+          shadow-mapSize-height={1024} 
         />
         <Environment preset="city" />
         
-        <CameraRig />
+        {/* Background Floating Elements - Spread around the edges */}
+        <Notebook position={[-8, 6, -5]} scale={0.6} rotation={[0.2, 0.5, -0.2]} />
+        <GradCap position={[8, 7, -8]} scale={0.7} rotation={[0.1, -0.4, 0.3]} />
+        <Laptop position={[9, -4, -10]} scale={0.8} rotation={[-0.2, -0.5, 0.1]} />
+        <Pencil position={[-7, -6, -6]} scale={1.2} rotation={[0.5, 0.1, -0.3]} />
         
-        <PresentationControls 
-          global 
-          config={{ mass: 2, tension: 500 }} 
-          snap={{ mass: 4, tension: 1500 }} 
-          rotation={[0, 0.3, 0]} 
-          polar={[-Math.PI / 3, Math.PI / 3]} 
-          azimuth={[-Math.PI / 1.4, Math.PI / 2]}
-        >
-          {/* Particles */}
-          <ParticleSystem count={200} />
-          
-          {/* Main Animated Elements based on scroll context */}
-          <Pencil isHero={true} position={[0, 0, 0]} scale={1.2} />
-          
-          <Notebook isVisible={currentSection !== 'college' && currentSection !== 'placement'} position={[-5, 2, -4]} scale={0.6} />
-          <Laptop isVisible={currentSection === 'college' || currentSection === 'projects'} position={[-5, 2, -4]} scale={0.6} />
-          
-          <GradCap position={[4, -3, -2]} scale={0.7} />
-          <PaperSheets position={[5, 4, -6]} scale={0.8} />
-          
-        </PresentationControls>
+        {/* Some scattered paper balls */}
+        <PaperBall position={[5, 2, -15]} scale={0.8} />
+        <PaperBall position={[-9, 0, -12]} scale={1.1} />
+        <PaperBall position={[6, -8, -10]} scale={0.6} />
 
-        <ContactShadows position={[0, -5, 0]} opacity={0.4} scale={20} blur={2} far={10} />
+        <ContactShadows position={[0, -10, 0]} opacity={0.3} scale={40} blur={2.5} far={20} />
       </Canvas>
     </div>
   )
