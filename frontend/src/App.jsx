@@ -30,82 +30,61 @@ const EnvelopeVisual = ({ scrollProgress }) => {
   // Map scroll progress (between 0.80 and 0.95) to open the envelope
   // Flap opens first: progress 0.80 to 0.85
   const flapProgress = Math.min(1, Math.max(0, (scrollProgress - 0.80) / 0.05))
-  const flapRotation = -180 * flapProgress
+  const flapRotation = -140 * flapProgress
 
   // Letter slides up second: progress 0.84 to 0.94
   const letterProgress = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.08))
-  const letterY = -140 * letterProgress
-  const letterScale = 0.98 + 0.07 * letterProgress
+  const letterY = -80 * letterProgress
+  const letterScale = 0.95 + 0.1 * letterProgress
 
   return (
-    <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 select-none pb-20">
-      {/* 3D Envelope Container */}
+    <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 select-none">
       <motion.div 
-        className="absolute inset-0 w-full h-full relative"
+        className="absolute inset-0 bg-[#EBE5D8] rounded-xl shadow-2xl border border-black/10 flex items-center justify-center overflow-hidden"
         style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: letterProgress * 8, rotateX: letterProgress * 5 }}
         transition={{ type: "spring", stiffness: 60 }}
       >
-        {/* 1. BACK PANEL (Z-0) */}
-        <div className="absolute inset-0 bg-[#E8E2D5] rounded-xl shadow-2xl border border-black/10 z-0 overflow-hidden">
-          {/* Decorative interior details */}
-          <div className="absolute top-4 right-4 w-12 h-16 border-2 border-dashed border-red-800/10 p-1 flex items-center justify-center">
-            <div className="w-full h-full border border-red-800/10 bg-red-50/10 flex flex-col items-center justify-center font-serif text-[8px] text-red-800/30">
-              <span>PLACIFIED</span>
-            </div>
+        {/* Decorative stamp in corner */}
+        <div className="absolute top-4 right-4 w-12 h-16 border-2 border-dashed border-red-800/40 p-1 flex items-center justify-center">
+          <div className="w-full h-full border border-red-800/20 bg-red-50/50 flex flex-col items-center justify-center font-serif text-[8px] text-red-800/60">
+            <span>OFFICIAL</span>
+            <span>STAMP</span>
           </div>
         </div>
 
-        {/* 2. LETTER PANEL (Z-10) - Slides upwards */}
+        {/* Outer Flap */}
         <motion.div 
-          className="absolute left-[5%] top-[10%] w-[90%] h-[80%] bg-white shadow-lg rounded p-6 space-y-3 z-10 flex flex-col justify-between border border-black/5"
-          style={{ y: letterY, scale: letterScale }}
-        >
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] tracking-widest text-[#2563EB] font-bold">PLACIFY CORP.</span>
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-            </div>
-            <div className="w-full h-px bg-black/10"></div>
-            <div className="font-serif text-[10px] text-[#333] space-y-2 leading-relaxed">
-              <p className="font-bold">Congratulations Candidate!</p>
-              <p>We are absolutely thrilled to extend you this offer for the position of <span className="text-[#2563EB] font-bold">Software Architect</span>.</p>
-              <p className="text-[9px] text-gray-500">Your performance in cohort building challenges was exemplary.</p>
-            </div>
-          </div>
-          
-          <div className="flex justify-between items-end border-t border-black/5 pt-2">
-            <div className="text-[8px] font-mono text-gray-400">Date: July 14, 2026</div>
-            <div className="text-right">
-              <div className="font-serif italic text-xs text-[#2563EB]">Signature</div>
-              <div className="w-16 h-px bg-black/30 ml-auto mt-1"></div>
-              <div className="text-[6px] text-gray-400">Placify Board</div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 3. FRONT POCKET (Z-20) - Covers bottom half with V-cut */}
-        <div 
-          className="absolute inset-x-0 bottom-0 h-[60%] bg-[#DFD9CB] rounded-b-xl border-t border-black/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] z-20"
-          style={{
-            clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 50% 35%, 0 0)'
-          }}
-        />
-
-        {/* 4. TOP FLAP PANEL (Z-30) - Rotates up to open */}
-        <motion.div 
-          className="absolute top-0 left-0 w-full h-[55%] bg-[#DFD9CB] origin-top rounded-t-xl z-30"
-          style={{ 
-            backfaceVisibility: 'hidden',
-            clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-            transformStyle: "preserve-3d"
-          }}
+          className="absolute top-0 left-0 w-full h-1/2 bg-[#DFD9CB] origin-top z-20 flex justify-center items-end pb-4"
           animate={{ rotateX: flapRotation }}
           transition={{ type: "tween", ease: "linear" }}
         >
-          {/* Wax seal */}
-          <div className="w-8 h-8 rounded-full bg-red-700 shadow-md border border-red-800 flex items-center justify-center absolute left-[calc(50%-16px)] bottom-2 z-40">
-            <span className="text-white font-serif text-xs font-bold">P</span>
+          {/* Wax Seal */}
+          <div className="w-10 h-10 rounded-full bg-red-700 shadow-md border-2 border-red-800 flex items-center justify-center transform translate-y-9 z-30">
+            <span className="text-white/60 font-serif text-xs font-bold">P</span>
+          </div>
+        </motion.div>
+
+        {/* Letter pulling out of envelope */}
+        <motion.div 
+          className="absolute w-[90%] h-[95%] bg-white shadow-xl rounded p-6 space-y-3 z-10 flex flex-col justify-between"
+          style={{ y: letterY, scale: letterScale }}
+        >
+          <div className="space-y-2">
+            <div className="text-center font-serif text-xs tracking-widest text-[#111] uppercase font-bold">Offer of Employment</div>
+            <div className="font-serif text-[10px] text-[#555] space-y-2 leading-relaxed">
+              <p className="font-bold">Dear Candidate,</p>
+              <p>We are thrilled to offer you the role of <span className="text-[#2563EB] font-bold">Software Engineer</span>.</p>
+              <p>Your skills, experience, and performance stood out exceptionally during our cohort evaluations.</p>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-end pt-2">
+            <div className="text-[8px] font-mono text-[#555]">Date: July 14, 2026</div>
+            <div className="text-right">
+              <div className="font-serif italic text-xs text-[#111]">Signature</div>
+              <div className="text-[6px] text-gray-400">Placify Board</div>
+            </div>
           </div>
         </motion.div>
 
