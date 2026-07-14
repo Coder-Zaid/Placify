@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { Pencil, Notebook, GradCap, Laptop, PaperBall } from './Models3D'
 
-function MovingPencil({ scroll }) {
+function MovingPencil({ scroll, isScrolling }) {
   const ref = useRef()
 
   // Calculate target positions based on scroll percent (0 to 1)
@@ -17,49 +17,49 @@ function MovingPencil({ scroll }) {
     let rz = Math.PI / 6
 
     if (s < 0.15) {
-      // Hero area
       const t = s / 0.15
-      x = 3.5 - 7 * t // moves from right to left
+      x = 3.5 - 7 * t
       y = 1.5 - 0.5 * t
       rz = Math.PI / 4 - (Math.PI / 2) * t
     } else if (s < 0.3) {
-      // School
       const t = (s - 0.15) / 0.15
-      x = -3.5 + 7 * t // moves left to right
+      x = -3.5 + 7 * t
       y = 1 - 0.5 * t
       rz = -Math.PI / 4 + (Math.PI / 2) * t
     } else if (s < 0.45) {
-      // College
       const t = (s - 0.3) / 0.15
-      x = 3.5 - 7 * t // moves right to left
+      x = 3.5 - 7 * t
       y = 0.5 - 0.5 * t
       rz = Math.PI / 4 - (Math.PI / 2) * t
     } else if (s < 0.6) {
-      // Learning
       const t = (s - 0.45) / 0.15
-      x = -3.5 + 7 * t // moves left to right
+      x = -3.5 + 7 * t
       y = 0 - 0.5 * t
       rz = -Math.PI / 4 + (Math.PI / 2) * t
     } else if (s < 0.75) {
-      // Resume
       const t = (s - 0.6) / 0.15
-      x = 3.5 - 7 * t // moves right to left
+      x = 3.5 - 7 * t
       y = -0.5 - 0.5 * t
       rz = Math.PI / 4 - (Math.PI / 2) * t
     } else if (s < 0.9) {
-      // Interview & Placement
       const t = (s - 0.75) / 0.15
-      x = -3.5 + 7 * t // moves left to right
+      x = -3.5 + 7 * t
       y = -1 - 0.5 * t
       rz = -Math.PI / 4 + (Math.PI / 2) * t
     } else {
-      // Resting at Footer
       const t = Math.min(1, (s - 0.9) / 0.1)
-      x = 3.5 - 3.5 * t // Centers horizontally
-      y = -1.5 - 4.5 * t // Drops down below footer text
+      x = 3.5 - 3.5 * t
+      y = -1.5 - 4.5 * t
       rx = (Math.PI / 4) * (1 - t)
       ry = 0
-      rz = -Math.PI / 4 * (1 - t) - (Math.PI / 2) * t // Lays flat horizontally
+      rz = -Math.PI / 4 * (1 - t) - (Math.PI / 2) * t
+    }
+
+    // Apply resting rotation adjustments if user stops scrolling
+    if (!isScrolling && s < 0.9) {
+      // Rotate pencil to a resting angle (e.g. leaning flat horizontally against the background)
+      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2
+      rx = 0.1
     }
 
     return { pos: [x, y, z], rot: [rx, ry, rz] }
@@ -86,7 +86,64 @@ function MovingPencil({ scroll }) {
   )
 }
 
-export default function Scene3D({ scroll = 0, isMainPage = true }) {
+function HeroProps({ scroll }) {
+  const notebookRef = useRef()
+  const capRef = useRef()
+  const laptopRef = useRef()
+  const ball1Ref = useRef()
+  const ball2Ref = useRef()
+  const ball3Ref = useRef()
+
+  useFrame(() => {
+    // If scroll > 0.12 (past first page), fade out/scale to 0. Otherwise scale is normal.
+    const targetScale = scroll > 0.12 ? 0 : 1
+    const lerpSpeed = 0.1
+
+    if (notebookRef.current) {
+      const current = notebookRef.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      notebookRef.current.scale.set(next * 0.5, next * 0.5, next * 0.5)
+    }
+    if (capRef.current) {
+      const current = capRef.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      capRef.current.scale.set(next * 0.6, next * 0.6, next * 0.6)
+    }
+    if (laptopRef.current) {
+      const current = laptopRef.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      laptopRef.current.scale.set(next * 0.7, next * 0.7, next * 0.7)
+    }
+    if (ball1Ref.current) {
+      const current = ball1Ref.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      ball1Ref.current.scale.set(next * 0.6, next * 0.6, next * 0.6)
+    }
+    if (ball2Ref.current) {
+      const current = ball2Ref.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      ball2Ref.current.scale.set(next * 0.8, next * 0.8, next * 0.8)
+    }
+    if (ball3Ref.current) {
+      const current = ball3Ref.current.scale.x
+      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
+      ball3Ref.current.scale.set(next * 0.5, next * 0.5, next * 0.5)
+    }
+  })
+
+  return (
+    <group>
+      <group ref={notebookRef} position={[-7, 4, -4]}><Notebook /></group>
+      <group ref={capRef} position={[7, 4, -5]}><GradCap /></group>
+      <group ref={laptopRef} position={[7, -4, -6]}><Laptop /></group>
+      <group ref={ball1Ref} position={[5, 1, -8]}><PaperBall /></group>
+      <group ref={ball2Ref} position={[-6, -1, -9]}><PaperBall /></group>
+      <group ref={ball3Ref} position={[4, -6, -7]}><PaperBall /></group>
+    </group>
+  )
+}
+
+export default function Scene3D({ scroll = 0, isScrolling = false, isMainPage = true }) {
   if (!isMainPage) return null
 
   return (
@@ -102,18 +159,11 @@ export default function Scene3D({ scroll = 0, isMainPage = true }) {
         />
         <Environment preset="city" />
         
-        {/* Floating background props fixed in the viewport scene to hover gently */}
-        <Notebook position={[-7, 4, -4]} scale={0.5} />
-        <GradCap position={[7, 4, -5]} scale={0.6} />
-        <Laptop position={[7, -4, -6]} scale={0.7} />
-        
-        {/* Scattered paper balls */}
-        <PaperBall position={[5, 1, -8]} scale={0.6} />
-        <PaperBall position={[-6, -1, -9]} scale={0.8} />
-        <PaperBall position={[4, -6, -7]} scale={0.5} />
+        {/* Props pinned to the first page (Hero) only */}
+        <HeroProps scroll={scroll} />
 
-        {/* The active 3D pencil guided by page scroll */}
-        <MovingPencil scroll={scroll} />
+        {/* The active 3D pencil guided by page scroll and resting when idle */}
+        <MovingPencil scroll={scroll} isScrolling={isScrolling} />
 
         <ContactShadows position={[0, -8, 0]} opacity={0.25} scale={30} blur={3} far={15} />
       </Canvas>

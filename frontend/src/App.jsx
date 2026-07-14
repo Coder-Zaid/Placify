@@ -144,6 +144,8 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isStoryOpen, setIsStoryOpen] = useState(false)
   const [resumeMode, setResumeMode] = useState('single') // single or batch
+  const [isScrolling, setIsScrolling] = useState(false)
+  const scrollTimeout = useRef(null)
   const { toasts, addToast, removeToast } = useToast()
   
   const [resumeData, setResumeData] = useState({ jdText: '', resumeFile: null, resumeBase64: '', results: null, isLoading: false, error: '' })
@@ -174,6 +176,22 @@ export default function App() {
     })
     return () => unsubscribe()
   }, [scrollYProgress])
+
+  // Scroll active/idle state listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(true)
+      clearTimeout(scrollTimeout.current)
+      scrollTimeout.current = setTimeout(() => {
+        setIsScrolling(false)
+      }, 200) // resting trigger after 200ms of inactivity
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      clearTimeout(scrollTimeout.current)
+    }
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem('placify_auth_token')
@@ -208,8 +226,16 @@ export default function App() {
     <SmoothScroll>
       <div ref={mainRef} className="relative min-h-screen font-display overflow-hidden selection:bg-[#2563EB] selection:text-white bg-transparent">
         
-        {/* Vintage Paper Texture and Fiber Overlay - Moved behind the 3D Canvas context */}
-        <div className="fixed inset-0 z-[-150] pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,_transparent_0%,_#FAF7F0_80%)] bg-[#FAF7F0]" />
+        {/* Soft engineering grid paper pattern */}
+        <div className="fixed inset-0 z-[-150] pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,_transparent_0%,_#FAF7F0_80%)] bg-[#FAF7F0]" 
+             style={{
+               backgroundImage: `
+                 linear-gradient(to right, rgba(17, 17, 17, 0.03) 1px, transparent 1px),
+                 linear-gradient(to bottom, rgba(17, 17, 17, 0.03) 1px, transparent 1px)
+               `,
+               backgroundSize: '30px 30px'
+             }}
+        />
         <div className="fixed inset-0 z-[-140] pointer-events-none opacity-5 mix-blend-multiply" 
              style={{ 
                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 500 500\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' 
@@ -220,7 +246,7 @@ export default function App() {
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthSuccess={setUser} addToast={addToast} />
 
         {/* 3D background elements canvas */}
-        <Scene3D scroll={scrollProgress} isMainPage={true} />
+        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} isMainPage={true} />
 
         {/* Global Pencil Path Background */}
         <div className="absolute inset-0 pointer-events-none z-0 hidden md:block">
@@ -228,10 +254,10 @@ export default function App() {
             <path 
               ref={pathRef}
               d="M 50% 10% C 70% 30%, 30% 50%, 50% 90%" 
-              stroke="#2563EB" 
+              stroke="#333333" 
               strokeWidth="2.5" 
               fill="none" 
-              className="opacity-40"
+              className="opacity-25"
               style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }}
             />
           </svg>
