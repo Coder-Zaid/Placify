@@ -83,7 +83,7 @@ export function PaperBall({ isTraveling = false, ...props }) {
 }
 
 // Sleek White Apple Pencil with pivot at the TIP [0, 0, 0]
-export function Pencil({ isHero = false, ...props }) {
+export function Pencil({ isHero = false, isErasing = false, ...props }) {
   const ref = useRef()
   
   useFrame((state) => {
@@ -100,10 +100,10 @@ export function Pencil({ isHero = false, ...props }) {
     <group ref={ref} {...props}>
       <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
         <group>
-          {/* Fine graphite lead tip point at Y=0 */}
+          {/* Fine graphite lead tip point at Y=0 (turns white/erasing color on scroll up) */}
           <mesh castShadow receiveShadow position={[0, 0.03, 0]} rotation={[Math.PI, 0, 0]}>
             <coneGeometry args={[0.03, 0.06, 32]} />
-            <primitive object={premiumMaterial} />
+            <meshStandardMaterial color={isErasing ? '#FAF7F0' : '#111111'} roughness={0.8} />
           </mesh>
 
           {/* Light grey pencil tip cone (tip reaches Y=0.06, base at Y=0.36) */}
