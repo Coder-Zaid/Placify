@@ -36,6 +36,7 @@ const EnvelopeVisual = ({ scrollProgress }) => {
   const letterProgress = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.08))
   const letterY = -80 * letterProgress
   const letterScale = 0.95 + 0.1 * letterProgress
+  const letterOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.02))
 
   return (
     <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 select-none">
@@ -68,10 +69,10 @@ const EnvelopeVisual = ({ scrollProgress }) => {
         {/* Front Cover / Bottom Half masking (Z-15) - Completely covers bottom of letter when closed */}
         <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[#EBE5D8] rounded-b-xl border-t border-black/5 z-15" />
 
-        {/* Letter pulling out of envelope */}
+        {/* Letter pulling out of envelope (Opacity bound to scroll so it's fully hidden when closed) */}
         <motion.div 
           className="absolute w-[90%] h-[95%] bg-white shadow-xl rounded p-6 space-y-3 z-10 flex flex-col justify-between"
-          style={{ y: letterY, scale: letterScale }}
+          style={{ y: letterY, scale: letterScale, opacity: letterOpacity }}
         >
           <div className="space-y-2">
             <div className="text-center font-serif text-xs tracking-widest text-[#111] uppercase font-bold">Offer of Employment</div>
