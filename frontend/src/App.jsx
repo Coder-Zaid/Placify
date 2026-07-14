@@ -1,14 +1,15 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
 import Toast from './components/Toast'
 import AuthModal from './components/AuthModal'
+import DrawingCanvas3D from './components/DrawingCanvas3D'
 import { useToast } from './hooks/useToast'
-import { Award, Layers, ShieldCheck, ArrowRight, Settings, X, Lock } from 'lucide-react'
+import { Award, Layers, ShieldCheck, ArrowRight, Settings, X, Lock, CheckSquare, Sparkles } from 'lucide-react'
 import axios from 'axios'
+import { gsap } from 'gsap'
 
-// Configure global axios base URL to relative or localhost backup
+// Configure global axios base URL
 axios.defaults.baseURL = import.meta.env.PROD ? '' : 'http://localhost:8000';
 
-// Configure axios interceptor to attach Bearer token automatically if available
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('placify_auth_token')
   if (token) {
@@ -22,6 +23,8 @@ axios.interceptors.request.use((config) => {
 // Lazy loaded modules
 const BatchAnalysis = lazy(() => import('./components/BatchAnalysis'))
 const ResumeAnalyzer = lazy(() => import('./components/ResumeAnalyzer'))
+const CohortAnalytics = lazy(() => import('./components/CohortAnalytics'))
+const InterviewModule = lazy(() => import('./components/InterviewModule'))
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home')
@@ -33,6 +36,9 @@ export default function App() {
   // Auth state
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [user, setUser] = useState(null)
+
+  // Saved results state for Cohort Dashboard mapping
+  const [cohortResults, setCohortResults] = useState([])
 
   // Batch Analysis State
   const [batchData, setBatchData] = useState({
@@ -54,10 +60,9 @@ export default function App() {
     error: ''
   })
   
-  // Toast Management
   const { toasts, addToast, removeToast } = useToast()
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage
   useEffect(() => {
     try {
       const savedBatchData = localStorage.getItem('placify_batch_data')
@@ -82,6 +87,9 @@ export default function App() {
           isLoading: false,
           error: ''
         }))
+        if (parsed.results && parsed.results.results) {
+          setCohortResults(parsed.results.results)
+        }
       }
       
       if (savedResumeData) {
@@ -106,7 +114,60 @@ export default function App() {
     }
   }, [])
 
-  // Persist batch data to localStorage
+  // GSAP scroll anim for floating pencils morphing into CTA
+  useEffect(() => {
+    if (activeTab !== 'home') return
+
+    // Setup animated scroll triggers
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const maxScroll = 400
+      const progress = Math.min(1, scrollY / maxScroll)
+
+      // Move pencil 1 and 2 to merge into the CTA wrapper
+      gsap.to('.floating-pencil-1', {
+        x: progress * 180,
+        y: progress * 320,
+        rotation: progress * 360,
+        opacity: 1 - progress * 0.7,
+        scale: 1 - progress * 0.4,
+        duration: 0.1
+      })
+
+      gsap.to('.floating-pencil-2', {
+        x: -progress * 180,
+        y: progress * 320,
+        rotation: -progress * 360,
+        opacity: 1 - progress * 0.7,
+        scale: 1 - progress * 0.4,
+        duration: 0.1
+      })
+
+      // Morphing target highlight pulse
+      if (progress >= 0.95) {
+        gsap.to('.cta-button-target', {
+          scale: 1.05,
+          borderColor: '#0F0F11',
+          backgroundColor: '#0F0F11',
+          color: '#FAFAF8',
+          duration: 0.2
+        })
+      } else {
+        gsap.to('.cta-button-target', {
+          scale: 1,
+          borderColor: 'rgba(15, 15, 17, 0.16)',
+          backgroundColor: 'transparent',
+          color: '#0F0F11',
+          duration: 0.2
+        })
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [activeTab])
+
+  // Persist batch data and update local cohort results
   useEffect(() => {
     try {
       const dataToPersist = {
@@ -115,12 +176,15 @@ export default function App() {
         results: batchData.results
       }
       localStorage.setItem('placify_batch_data', JSON.stringify(dataToPersist))
+      if (batchData.results && batchData.results.results) {
+        setCohortResults(batchData.results.results)
+      }
     } catch (err) {
-      console.error('Error saving batch data to localStorage:', err)
+      console.error('Error saving batch data:', err)
     }
   }, [batchData.jdText, batchData.csvText, batchData.results])
 
-  // ... rest of useeffects ...
+  // Persist resume data
   useEffect(() => {
     try {
       const dataToPersist = {
@@ -130,15 +194,9 @@ export default function App() {
       }
       localStorage.setItem('placify_resume_data', JSON.stringify(dataToPersist))
     } catch (err) {
-      console.error('Error saving resume data to localStorage:', err)
+      console.error('Error saving resume data:', err)
     }
   }, [resumeData.jdText, resumeData.resumeBase64, resumeData.results])
-
-  useEffect(() => {
-    if (isApiActive && apiKey) {
-      localStorage.setItem('placify_api_key', apiKey)
-    }
-  }, [apiKey, isApiActive])
 
   const handleVerifyApiKey = () => {
     const cleanKey = tempKey.trim()
@@ -172,15 +230,6 @@ export default function App() {
     })
   }
 
-  const updateBatchData = (updates) => {
-    setBatchData(prev => ({ ...prev, ...updates }))
-  }
-
-  const updateResumeData = (updates) => {
-    setResumeData(prev => ({ ...prev, ...updates }))
-  }
-
-  // Helper check for tabs
   const handleTabChange = (tabName) => {
     if (tabName === 'home') {
       setActiveTab('home')
@@ -205,6 +254,14 @@ export default function App() {
     }
 
     setActiveTab(tabName)
+  }
+
+  const updateBatchData = (updates) => {
+    setBatchData(prev => ({ ...prev, ...updates }))
+  }
+
+  const updateResumeData = (updates) => {
+    setResumeData(prev => ({ ...prev, ...updates }))
   }
 
   return (
@@ -257,10 +314,24 @@ export default function App() {
               {!user && <Lock className="h-3 w-3 text-[#A8A8AE]" />}
               Resume Screening
             </button>
+            <button 
+              onClick={() => handleTabChange('cohort')}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'cohort' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
+            >
+              {!user && <Lock className="h-3 w-3 text-[#A8A8AE]" />}
+              Cohort Dashboard
+            </button>
+            <button 
+              onClick={() => handleTabChange('interview')}
+              className={`text-sm font-medium transition-colors flex items-center gap-1 ${activeTab === 'interview' ? 'text-[#0F0F11]' : 'text-[#6F6F75] hover:text-[#0F0F11]'}`}
+            >
+              {!user && <Lock className="h-3 w-3 text-[#A8A8AE]" />}
+              Mock Practice
+            </button>
             
             {user ? (
               <div className="flex items-center gap-4 border-l border-[#0F0F11]/10 pl-6">
-                <span className="text-xs font-mono text-[#6F6F75]">{user.email} ({user.role})</span>
+                <span className="text-xs font-mono text-[#6F6F75]">{user.email}</span>
                 <button 
                   onClick={handleLogout}
                   className="text-xs font-medium text-[#0F0F11] hover:underline"
@@ -277,11 +348,9 @@ export default function App() {
               </button>
             )}
 
-            {/* Cogwheel Settings Toggle */}
             <button 
               onClick={() => setIsSettingsOpen(true)}
               className="text-[#6F6F75] hover:text-[#0F0F11] transition-colors p-1.5 focus:outline-none rounded-full hover:bg-[#0F0F11]/5"
-              title="API Key Configuration"
             >
               <Settings className="h-5 w-5 stroke-[1.5] animate-spin-hover" />
             </button>
@@ -324,13 +393,6 @@ export default function App() {
                 Apply Configuration
               </button>
             </div>
-
-            {isApiActive && (
-              <div className="flex items-center justify-center gap-2 border border-[#0F0F11]/10 bg-[#FAFAF8] rounded-[10px] py-3">
-                <ShieldCheck className="h-4 w-4 text-[#0F0F11]" />
-                <span className="text-xs font-mono">Loaded key prefix: {apiKey.substring(0, 8)}...</span>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -338,49 +400,76 @@ export default function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-8 py-16">
         {activeTab === 'home' ? (
-          /* Premium Monochrome Landing Page */
-          <div className="space-y-24">
+          /* Landing Page with GSAP Pencil Morph CTA and 3D Canvas Elements */
+          <div className="space-y-32 relative">
+            
+            {/* Absolute positioning pencils for scroll CTA alignment */}
+            <div className="hidden lg:block absolute left-[-60px] top-[140px] floating-pencil-1 z-10 pointer-events-none">
+              <DrawingCanvas3D type="pencil" width={100} height={100} isInteractive={false} />
+            </div>
+            <div className="hidden lg:block absolute right-[-60px] top-[140px] floating-pencil-2 z-10 pointer-events-none">
+              <DrawingCanvas3D type="pencil" width={100} height={100} isInteractive={false} />
+            </div>
+
             {/* Hero Section */}
             <div className="max-w-4xl space-y-8 pt-8">
-              <span className="font-mono text-xs uppercase tracking-widest text-[#6F6F75]">Omni-Provider Framework</span>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#6F6F75] flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 stroke-[1.5] animate-pulse-soft" />
+                Next Generation 3D Student Platform
+              </span>
               <h1 className="text-6xl font-medium tracking-tight leading-[1.1] text-[#0F0F11]">
                 Redefining candidate vetting with unified intelligence models.
               </h1>
               <p className="text-lg text-[#6F6F75] leading-relaxed max-w-2xl">
-                Placify applies mathematical criteria weightings and deep semantic matching to place candidates against rigorous job requirements. Now compatible with Groq, Gemini, and OpenAI.
+                Placify applies mathematical criteria weightings and deep semantic matching to place candidates against rigorous job requirements. Scroll down to assemble your pencil tools.
               </p>
               
-              <div className="flex flex-wrap gap-4 pt-4">
-                <button 
-                  onClick={() => handleTabChange('batch')}
-                  className="btn-primary hover-scale"
-                >
-                  Analyze Student Batch
-                </button>
+              {/* Morph Target Scroll Action */}
+              <div className="pt-8">
                 <button 
                   onClick={() => handleTabChange('resume')}
-                  className="btn-secondary hover-scale"
+                  className="btn-outline text-lg font-medium px-8 py-4 border-2 cta-button-target hover-scale"
                 >
-                  Screen Single Resume
+                  Configure My Placement Tools
                 </button>
               </div>
             </div>
 
-            {/* Providers Ribbon */}
-            <div className="border-y border-[#0F0F11]/10 py-8 flex flex-wrap justify-between items-center gap-6">
-              <span className="font-mono text-xs text-[#A8A8AE] uppercase tracking-widest">Supported Engines</span>
-              <div className="flex flex-wrap gap-8 items-center font-mono text-sm text-[#6F6F75]">
-                <span>Groq LLaMA</span>
-                <span className="text-[#A8A8AE]">/</span>
-                <span>Google Gemini</span>
-                <span className="text-[#A8A8AE]">/</span>
-                <span>OpenAI GPT</span>
-                <span className="text-[#A8A8AE]">/</span>
-                <span>Anthropic Claude</span>
+            {/* Interactive 3D School & College Stuff Grid */}
+            <div className="space-y-8 pt-12">
+              <div className="space-y-2">
+                <h3 className="text-sm font-mono uppercase tracking-widest text-[#A8A8AE]">3D Wireframe Desk Tools</h3>
+                <h2 className="text-3xl font-medium tracking-tight text-[#0F0F11]">Hover to rotate your college gear</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="q-card hover-scale flex flex-col items-center p-8 space-y-4">
+                  <DrawingCanvas3D type="pencil" width={140} height={140} isInteractive={true} />
+                  <div className="text-center">
+                    <h4 className="font-medium text-base">Architect Pencil</h4>
+                    <p className="text-xs text-[#6F6F75] mt-1">Represents writing code logic algorithms</p>
+                  </div>
+                </div>
+
+                <div className="q-card hover-scale flex flex-col items-center p-8 space-y-4">
+                  <DrawingCanvas3D type="book" width={140} height={140} isInteractive={true} />
+                  <div className="text-center">
+                    <h4 className="font-medium text-base">Design Notebook</h4>
+                    <p className="text-xs text-[#6F6F75] mt-1">Database normalization guidelines</p>
+                  </div>
+                </div>
+
+                <div className="q-card hover-scale flex flex-col items-center p-8 space-y-4">
+                  <DrawingCanvas3D type="cap" width={140} height={140} isInteractive={true} />
+                  <div className="text-center">
+                    <h4 className="font-medium text-base">Graduation Cap</h4>
+                    <p className="text-xs text-[#6F6F75] mt-1">Cohort readiness criteria gates</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Service Advertising Cards */}
+            {/* Services Cards */}
             <div className="space-y-8">
               <div className="space-y-2">
                 <h2 className="text-3xl font-medium tracking-tight">Our Core Evaluation Modules</h2>
@@ -388,7 +477,6 @@ export default function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Module 1: Batch Analysis */}
                 <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => handleTabChange('batch')}>
                   <div className="space-y-6">
                     <div className="w-12 h-12 rounded-[10px] border border-[#0F0F11]/15 flex items-center justify-center">
@@ -406,7 +494,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Module 2: Single Resume Analysis */}
                 <div className="q-card flex flex-col justify-between h-[320px] hover:border-[#0F0F11]/30 transition-all cursor-pointer hover-scale" onClick={() => handleTabChange('resume')}>
                   <div className="space-y-6">
                     <div className="w-12 h-12 rounded-[10px] border border-[#0F0F11]/15 flex items-center justify-center">
@@ -450,6 +537,16 @@ export default function App() {
                   apiKey={apiKey} 
                   data={resumeData}
                   updateData={updateResumeData}
+                  addToast={addToast}
+                />
+              )}
+              {activeTab === 'cohort' && (
+                <CohortAnalytics 
+                  results={cohortResults}
+                />
+              )}
+              {activeTab === 'interview' && (
+                <InterviewModule 
                   addToast={addToast}
                 />
               )}

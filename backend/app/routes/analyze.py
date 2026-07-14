@@ -16,10 +16,14 @@ from ..models import (
     StudentAnalysisResult,
     PillarBreakdown,
     ResumeAnalysisRequest,
-    ResumeAnalysisResponse
+    ResumeAnalysisResponse,
+    InterviewRequest,
+    InterviewResponse
 )
 from ..services.llm_service import UniversalLLMService
 from ..services.gemini_service import get_working_model
+from ..services.vector_service import calculate_cosine_similarity
+from ..services.sentiment_service import analyze_sentiment_valence
 import os
 
 router = APIRouter(prefix="/analyze", tags=["analyze"])
@@ -1768,3 +1772,31 @@ async def analyze_resume_offline(request: ResumeAnalysisRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Offline resume analysis failed: {str(e)[:80]}")
+
+@router.post("/interview/evaluate", response_model=InterviewResponse)
+async def evaluate_mock_response(request: InterviewRequest):
+    """
+    Fast offline evaluation of mock interview answer.
+    Computes semantic similarity to question concepts and extracts sentiment.
+    """
+    try:
+        content_score = calculate_cosine_similarity(request.answer, request.question)
+        # Boost base score since comparison is to query rather than full key-answer guidelines
+        content_score = min(100.0, content_score * 3.5 + 25.0)
+        
+        sentiment_score, tone = analyze_sentiment_valence(request.answer)
+        
+        feedback = (
+            f"The candidate response shows a {tone.lower()} expression. "
+            f"Evaluations scored {content_score:.1f}% semantic keyword alignment against prompt directives. "
+            "Suggest refining specifications with structured technical definitions to boost impact."
+        )
+        
+        return InterviewResponse(
+            content_score=round(content_score, 1),
+            sentiment_score=sentiment_score,
+            tone=tone,
+            feedback=feedback
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Evaluation execution failed: {str(e)}")

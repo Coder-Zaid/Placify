@@ -91,6 +91,16 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class InterviewRequest(BaseModel):
+    question: str
+    answer: str
+
+class InterviewResponse(BaseModel):
+    content_score: float
+    sentiment_score: float
+    tone: str
+    feedback: str
+
 # ============================================================================
 # SQLALCHEMY DATABASE MODELS
 # ============================================================================
