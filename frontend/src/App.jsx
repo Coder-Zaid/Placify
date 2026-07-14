@@ -285,6 +285,7 @@ export default function App() {
               strokeWidth="0.5" 
               fill="none" 
               className="opacity-70"
+              strokeLinecap="round"
               style={{ 
                 strokeDasharray: pathLength, 
                 strokeDashoffset: pathLength - (Math.max(0, scrollProgress - 0.004) * pathLength) 
