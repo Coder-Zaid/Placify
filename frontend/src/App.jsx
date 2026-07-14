@@ -88,54 +88,182 @@ const EnvelopeVisual = () => {
   )
 }
 
-const NotebookVisual = () => (
-  <motion.div 
-    whileHover={{ scale: 1.03 }}
-    className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000"
-  >
-    <div className="absolute inset-0 bg-white shadow-2xl rounded-sm transform rotate-y-[-10deg] rotate-x-[20deg] rotate-z-[5deg] flex divide-x divide-black/10 border border-black/5">
-      <div className="w-1/2 h-full p-6 space-y-4">
-        <div className="w-3/4 h-2 bg-black/10 rounded"></div>
-        <div className="w-full h-2 bg-black/5 rounded"></div>
-        <div className="w-5/6 h-2 bg-black/5 rounded"></div>
-        <div className="font-serif italic text-blue-600/40 text-xl mt-8">f(x) = ax² + bx + c</div>
-      </div>
-      <div className="w-1/2 h-full p-6 space-y-4 relative">
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/5 to-transparent"></div>
-        <div className="w-full h-2 bg-black/10 rounded"></div>
-        <div className="w-4/5 h-2 bg-black/5 rounded"></div>
-        <div className="w-full h-32 border-2 border-dashed border-black/10 rounded-xl mt-4 flex items-center justify-center">
-          <svg className="w-12 h-12 text-black/10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-        </div>
-      </div>
-    </div>
-  </motion.div>
-)
+const NotebookVisual = () => {
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.08
+      }
+    }
+  }
 
-const LaptopVisual = () => (
-  <motion.div 
-    whileHover={{ y: -5 }}
-    className="relative w-full aspect-[16/10] max-w-lg mx-auto"
-  >
-    <div className="absolute inset-x-8 top-0 bottom-6 bg-[#111] rounded-t-2xl p-3 shadow-2xl border-4 border-[#333]">
-      <div className="w-full h-full bg-[#1E1E1E] rounded-lg overflow-hidden flex flex-col font-mono text-xs">
-        <div className="h-6 bg-[#2D2D2D] flex items-center px-3 gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-          <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+  const letterVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 }
+  }
+
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.03 }}
+      className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000"
+    >
+      <div className="absolute inset-0 bg-white shadow-2xl rounded-sm transform rotate-y-[-10deg] rotate-x-[20deg] rotate-z-[5deg] flex divide-x divide-black/10 border border-black/5">
+        
+        {/* Left Page (Formula Writing) */}
+        <div className="w-1/2 h-full p-6 space-y-4">
+          <div className="w-3/4 h-2 bg-black/10 rounded"></div>
+          <div className="w-full h-2 bg-black/5 rounded"></div>
+          <div className="w-5/6 h-2 bg-black/5 rounded"></div>
+          
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: false, margin: "-50px" }}
+            className="font-serif italic text-blue-600 text-lg mt-8 select-none"
+          >
+            {Array.from("f(x) = ax² + bx + c").map((char, idx) => (
+              <motion.span key={idx} variants={letterVariants}>
+                {char}
+              </motion.span>
+            ))}
+          </motion.div>
         </div>
-        <div className="p-4 text-green-400 space-y-2">
-          <div><span className="text-blue-400">const</span> future = <span className="text-yellow-300">new</span> Career();</div>
-          <div>future.<span className="text-blue-300">build</span>();</div>
-          <div className="animate-pulse">_</div>
+
+        {/* Right Page (Parabola Graph Drawing) */}
+        <div className="w-1/2 h-full p-6 space-y-4 relative">
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/5 to-transparent"></div>
+          <div className="w-full h-2 bg-black/10 rounded"></div>
+          <div className="w-4/5 h-2 bg-black/5 rounded"></div>
+          
+          {/* Coordinates Grid and Parabola curve */}
+          <div className="w-full h-32 border-2 border-dashed border-black/10 rounded-xl mt-4 flex items-center justify-center overflow-hidden">
+            <svg className="w-full h-full p-2" viewBox="0 0 100 80">
+              {/* Axes */}
+              <line x1="10" y1="50" x2="90" y2="50" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+              <line x1="50" y1="10" x2="50" y2="70" stroke="rgba(0,0,0,0.15)" strokeWidth="1" />
+              
+              {/* Arrowheads */}
+              <path d="M 90,48 L 94,50 L 90,52 Z" fill="rgba(0,0,0,0.15)" />
+              <path d="M 48,10 L 50,6 L 52,10 Z" fill="rgba(0,0,0,0.15)" />
+
+              {/* Animating Parabola Curve */}
+              <motion.path 
+                d="M 20,70 Q 50,15 80,70" 
+                stroke="#2563EB" 
+                strokeWidth="2" 
+                fill="none"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                viewport={{ once: false, margin: "-50px" }}
+                transition={{ delay: 1.5, duration: 1.5, ease: "easeInOut" }}
+              />
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    </motion.div>
+  )
+}
+
+const LaptopVisual = () => {
+  const codeLines = [
+    '// Live Canvas Render',
+    'const ctx = canvas.getContext("2d");',
+    'ctx.beginPath();',
+    'ctx.arc(50, 50, 30, 0, Math.PI * 2);',
+    'ctx.strokeStyle = "#2563EB";',
+    'ctx.stroke();'
+  ]
+
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  }
+
+  const lineVariants = {
+    hidden: { opacity: 0, x: -5 },
+    visible: { opacity: 1, x: 0 }
+  }
+
+  return (
+    <motion.div 
+      whileHover={{ y: -5 }}
+      className="relative w-full aspect-[16/10] max-w-lg mx-auto"
+    >
+      <div className="absolute inset-x-8 top-0 bottom-6 bg-[#111] rounded-t-2xl p-3 shadow-2xl border-4 border-[#333]">
+        <div className="w-full h-full bg-[#1E1E1E] rounded-lg overflow-hidden flex flex-col font-mono text-xs select-none">
+          {/* Header Bar */}
+          <div className="h-6 bg-[#2D2D2D] flex items-center px-3 gap-2 border-b border-black/25">
+            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span className="text-[10px] text-gray-400 ml-2">circle_render.js</span>
+          </div>
+          {/* Split IDE Panel */}
+          <div className="grid grid-cols-12 h-[calc(100%-24px)]">
+            {/* Code Panel */}
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: false, margin: "-50px" }}
+              className="col-span-7 p-3 text-green-400 space-y-1.5 border-r border-white/5 font-mono text-[9px] leading-normal"
+            >
+              {codeLines.map((line, idx) => (
+                <motion.div key={idx} variants={lineVariants}>
+                  {line.startsWith('//') ? (
+                    <span className="text-gray-500">{line}</span>
+                  ) : line.includes('const') ? (
+                    <span><span className="text-purple-400">const</span> {line.replace('const', '')}</span>
+                  ) : (
+                    <span>{line}</span>
+                  )}
+                </motion.div>
+              ))}
+              <div className="animate-pulse w-1.5 h-3 bg-green-400 inline-block"></div>
+            </motion.div>
+            
+            {/* Live Canvas Output Panel */}
+            <div className="col-span-5 flex items-center justify-center bg-[#141414] p-4 relative">
+              <div className="absolute top-2 left-2 text-[8px] text-gray-500 uppercase tracking-widest">Preview</div>
+              
+              <svg className="w-20 h-20" viewBox="0 0 100 100">
+                {/* Backdrop design grid lines */}
+                <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.02)" strokeWidth="1" fill="none" />
+                <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+                <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+
+                {/* Traced Circle */}
+                <motion.circle 
+                  cx="50"
+                  cy="50"
+                  r="30"
+                  stroke="#2563EB"
+                  strokeWidth="3"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  whileInView={{ pathLength: 1 }}
+                  viewport={{ once: false, margin: "-50px" }}
+                  transition={{ delay: 1.2, duration: 1.8, ease: "easeInOut" }}
+                />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-[#E0E0E0] to-[#B0B0B0] rounded-b-3xl shadow-xl border-t border-white/50 flex justify-center">
-      <div className="w-1/4 h-1 bg-[#A0A0A0] mt-1 rounded-full"></div>
-    </div>
-  </motion.div>
-)
+      <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-[#E0E0E0] to-[#B0B0B0] rounded-b-3xl shadow-xl border-t border-white/50 flex justify-center">
+        <div className="w-1/4 h-1 bg-[#A0A0A0] mt-1 rounded-full"></div>
+      </div>
+    </motion.div>
+  )
+}
 
 export default function App() {
   const mainRef = useRef(null)
@@ -380,19 +508,94 @@ export default function App() {
                 <p className="text-[#555555] text-lg">Skills, projects, and cohort analytics define candidate standings.</p>
               </div>
               <div className="md:col-span-8 flex justify-center gap-4 perspective-1000">
-                {[1, 2, 3].map(i => (
-                  <motion.div 
-                    key={i} 
-                    whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
-                    className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}
-                  >
-                    <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold">C{i}</div>
-                    <div className="space-y-2">
-                      <div className="w-full h-2 bg-black/10 rounded"></div>
-                      <div className="w-2/3 h-2 bg-black/5 rounded"></div>
+                {/* Card 1: Web Dev */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: false, margin: "-50px" }}
+                  whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">C1</div>
+                    <div className="mt-3 font-bold text-xs text-[#111111]">Web Dev</div>
+                    <div className="text-[10px] text-gray-400">Cohort 2026</div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px]">
+                      <span className="text-gray-500">Placements</span>
+                      <span className="font-bold text-blue-600">92%</span>
                     </div>
-                  </motion.div>
-                ))}
+                    {/* Animated Progress Bar */}
+                    <div className="w-full h-1.5 bg-black/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "92%" }}
+                        transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
+                        className="h-full bg-blue-600 rounded-full"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Card 2: AI & ML (Centered, slightly elevated) */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: -32 }}
+                  viewport={{ once: false, margin: "-50px" }}
+                  whileHover={{ rotateY: 0, scale: 1.05, y: -40 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-40 h-56 bg-white rounded-xl shadow-2xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 p-4 flex flex-col justify-between z-10"
+                >
+                  <div>
+                    <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">C2</div>
+                    <div className="mt-3 font-bold text-xs text-[#111111]">AI & ML</div>
+                    <div className="text-[10px] text-gray-400">Cohort 2026</div>
+                  </div>
+                  {/* Animated Column Bar Chart */}
+                  <div className="h-16 flex items-end justify-between px-2 gap-1.5">
+                    {[30, 55, 40, 65].map((height, idx) => (
+                      <motion.div 
+                        key={idx}
+                        initial={{ height: 0 }}
+                        whileInView={{ height: `${height}%` }}
+                        transition={{ delay: 0.4 + idx * 0.15, duration: 0.8, ease: "backOut" }}
+                        className="w-full bg-blue-500/80 hover:bg-blue-600 rounded-t-sm"
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Card 3: DSA & Systems */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: false, margin: "-50px" }}
+                  whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="w-8 h-8 rounded bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">C3</div>
+                    <div className="mt-3 font-bold text-xs text-[#111111]">DSA & Sys</div>
+                    <div className="text-[10px] text-gray-400">Cohort 2026</div>
+                  </div>
+                  {/* Animated line chart */}
+                  <div className="h-16 relative flex items-center justify-center overflow-hidden">
+                    <svg className="w-full h-full" viewBox="0 0 100 40">
+                      <motion.path 
+                        d="M 5,35 Q 25,10 50,28 T 95,5"
+                        stroke="#2563EB"
+                        strokeWidth="2"
+                        fill="none"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ delay: 0.3, duration: 1.2, ease: "easeInOut" }}
+                      />
+                    </svg>
+                  </div>
+                </motion.div>
               </div>
             </div>
             
