@@ -1,9 +1,9 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Float, Icosahedron } from '@react-three/drei'
 import * as THREE from 'three'
 
-// Premium Monochrome Material
+// Premium materials
 const premiumMaterial = new THREE.MeshPhysicalMaterial({
   color: '#111111',
   metalness: 0.1,
@@ -18,36 +18,71 @@ const paperMaterial = new THREE.MeshStandardMaterial({
   metalness: 0,
 })
 
+const applePencilBodyMaterial = new THREE.MeshPhysicalMaterial({
+  color: '#FFFFFF',
+  roughness: 0.2,
+  metalness: 0.05,
+  clearcoat: 0.3,
+  clearcoatRoughness: 0.1,
+})
+
+const applePencilTipMaterial = new THREE.MeshPhysicalMaterial({
+  color: '#E2E8F0',
+  roughness: 0.5,
+  metalness: 0,
+})
+
+// Interactive click-to-spin wrapper
+function InteractiveWrapper({ children, defaultRotation = [0, 0, 0], ...props }) {
+  const ref = useRef()
+  const [spinAngle, setSpinAngle] = useState(0)
+
+  const handleClick = (e) => {
+    e.stopPropagation()
+    setSpinAngle(prev => prev + Math.PI / 2) // Spins 90 deg on click
+  }
+
+  useFrame(() => {
+    if (ref.current) {
+      ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, spinAngle, 0.1)
+    }
+  })
+
+  return (
+    <group ref={ref} onClick={handleClick} rotation={defaultRotation} {...props}>
+      {children}
+    </group>
+  )
+}
+
 // The Traveling Paper Ball
 export function PaperBall({ isTraveling = false, ...props }) {
   const ref = useRef()
   
   useFrame((state) => {
     if (isTraveling && ref.current) {
-      // Gentle spin as it travels
       ref.current.rotation.x += 0.01
       ref.current.rotation.y += 0.015
     }
   })
 
   return (
-    <group ref={ref} {...props}>
-      <Float speed={2} rotationIntensity={isTraveling ? 0 : 0.5} floatIntensity={isTraveling ? 0 : 1}>
+    <InteractiveWrapper {...props}>
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
         <mesh castShadow receiveShadow>
-          {/* Icosahedron gives a slightly jagged, crumpled look compared to a perfect sphere */}
           <Icosahedron args={[0.3, 2]} />
           <primitive object={paperMaterial} />
         </mesh>
-        {/* Drawn graphite lines on the ball */}
         <lineSegments>
           <edgesGeometry args={[new THREE.IcosahedronGeometry(0.301, 2)]} />
           <lineBasicMaterial color="#555555" transparent opacity={0.3} />
         </lineSegments>
       </Float>
-    </group>
+    </InteractiveWrapper>
   )
 }
 
+// Sleek White Apple Pencil
 export function Pencil({ isHero = false, ...props }) {
   const ref = useRef()
   
@@ -63,27 +98,36 @@ export function Pencil({ isHero = false, ...props }) {
 
   return (
     <group ref={ref} {...props}>
-      <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
+      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
         <group rotation={[Math.PI / 4, 0, Math.PI / 6]}>
+          {/* Apple Pencil Main Body (Smooth white cylinder with flat side) */}
           <mesh castShadow receiveShadow position={[0, 0, 0]}>
-            <cylinderGeometry args={[0.2, 0.2, 3, 6]} />
-            <meshStandardMaterial color="#E0A96D" roughness={0.7} />
+            <cylinderGeometry args={[0.15, 0.15, 3.4, 32]} />
+            <primitive object={applePencilBodyMaterial} />
           </mesh>
-          <mesh castShadow receiveShadow position={[0, -1.7, 0]}>
-            <coneGeometry args={[0.2, 0.4, 6]} />
-            <meshStandardMaterial color="#E8DCC4" roughness={0.9} />
+          
+          {/* Light grey pencil tip cone */}
+          <mesh castShadow receiveShadow position={[0, -1.8, 0]}>
+            <coneGeometry args={[0.15, 0.3, 32]} />
+            <primitive object={applePencilTipMaterial} />
           </mesh>
-          <mesh castShadow receiveShadow position={[0, -1.9, 0]}>
-            <coneGeometry args={[0.05, 0.1, 6]} />
+          
+          {/* Fine graphite point */}
+          <mesh castShadow receiveShadow position={[0, -1.96, 0]}>
+            <coneGeometry args={[0.03, 0.06, 32]} />
             <primitive object={premiumMaterial} />
           </mesh>
-          <mesh castShadow receiveShadow position={[0, 1.6, 0]}>
-            <cylinderGeometry args={[0.21, 0.21, 0.2, 16]} />
-            <meshStandardMaterial color="#A1A1AA" metalness={0.8} roughness={0.2} />
+
+          {/* Minimalist grey cap line (Apple Pencil style) */}
+          <mesh castShadow receiveShadow position={[0, 1.68, 0]}>
+            <cylinderGeometry args={[0.151, 0.151, 0.04, 32]} />
+            <meshStandardMaterial color="#CBD5E1" metalness={0.5} roughness={0.2} />
           </mesh>
-          <mesh castShadow receiveShadow position={[0, 1.85, 0]}>
-            <cylinderGeometry args={[0.2, 0.2, 0.3, 16]} />
-            <meshStandardMaterial color="#D98383" roughness={0.9} />
+          
+          {/* White top cap dome */}
+          <mesh castShadow receiveShadow position={[0, 1.73, 0]}>
+            <sphereGeometry args={[0.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <primitive object={applePencilBodyMaterial} />
           </mesh>
         </group>
       </Float>
@@ -93,7 +137,7 @@ export function Pencil({ isHero = false, ...props }) {
 
 export function Notebook(props) {
   return (
-    <group {...props}>
+    <InteractiveWrapper {...props}>
       <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
         <group rotation={[-Math.PI / 6, Math.PI / 4, 0]}>
           <mesh castShadow receiveShadow position={[0, -0.1, 0]}>
@@ -110,13 +154,13 @@ export function Notebook(props) {
           </mesh>
         </group>
       </Float>
-    </group>
+    </InteractiveWrapper>
   )
 }
 
 export function GradCap(props) {
   return (
-    <group {...props}>
+    <InteractiveWrapper {...props}>
       <Float speed={2.5} rotationIntensity={0.8} floatIntensity={1.2}>
         <group rotation={[Math.PI / 8, Math.PI / 4, 0]}>
           <mesh castShadow receiveShadow position={[0, 0.2, 0]} rotation={[0, Math.PI / 4, 0]}>
@@ -137,27 +181,25 @@ export function GradCap(props) {
           </mesh>
         </group>
       </Float>
-    </group>
+    </InteractiveWrapper>
   )
 }
 
 export function Laptop(props) {
   return (
-    <group {...props}>
+    <InteractiveWrapper {...props}>
       <Float speed={1} rotationIntensity={0.1} floatIntensity={0.3}>
         <group rotation={[Math.PI / 12, -Math.PI / 6, 0]}>
-          {/* Base */}
           <mesh castShadow receiveShadow position={[0, 0, 0]}>
             <boxGeometry args={[4, 0.1, 3]} />
             <meshStandardMaterial color="#CCCCCC" metalness={0.6} roughness={0.4} />
           </mesh>
-          {/* Screen */}
           <mesh castShadow receiveShadow position={[0, 1.5, -1.4]} rotation={[Math.PI / 12, 0, 0]}>
             <boxGeometry args={[4, 3, 0.1]} />
             <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
           </mesh>
         </group>
       </Float>
-    </group>
+    </InteractiveWrapper>
   )
 }

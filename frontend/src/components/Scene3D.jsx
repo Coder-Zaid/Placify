@@ -50,15 +50,16 @@ function MovingPencil({ scroll, isScrolling }) {
       const t = Math.min(1, (s - 0.9) / 0.1)
       x = 3.5 - 3.5 * t
       y = -1.5 - 4.5 * t
-      rx = (Math.PI / 4) * (1 - t)
+      rx = 0
       ry = 0
-      rz = -Math.PI / 4 * (1 - t) - (Math.PI / 2) * t
+      rz = -Math.PI / 2
     }
 
-    // Apply resting rotation adjustments if user stops scrolling
+    // When scrolling stops (isScrolling is false), pencil sleeps flat at the bottom of the viewport
     if (!isScrolling && s < 0.9) {
-      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2
-      rx = 0.1
+      y = -4 // Moves to the bottom edge of the viewport
+      rx = 0 // Flat laying down
+      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2 // Points horizontally left or right
     }
 
     return { pos: [x, y, z], rot: [rx, ry, rz] }
