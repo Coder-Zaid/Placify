@@ -50,10 +50,11 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
       rz += Math.PI // Rotate 180 degrees so eraser points down
       rx = -Math.PI / 4 // Angle for eraser contact
       
-      // Offset the group position so the eraser tip (located 3.8 units up the body)
-      // sits exactly on the path coordinates (x, y)
-      x += 3.8 * Math.sin(rz)
-      y -= 3.8 * Math.cos(rz)
+      // Offset the group position to account for both Z-rotation and X-rotation tilt (Math.cos(rx))
+      // so the eraser tip sits exactly on the path coordinates (x, y)
+      const visibleLength = 3.8 * Math.cos(rx)
+      x += visibleLength * Math.sin(rz)
+      y -= visibleLength * Math.cos(rz)
     }
 
     // Final sleep mode at the end (preserve exact path coordinates, only lie flat)
