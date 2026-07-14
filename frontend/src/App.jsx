@@ -158,6 +158,7 @@ export default function App() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [pencilPos, setPencilPos] = useState({ x: 0, y: 0 })
   const [scrollDirection, setScrollDirection] = useState('down')
+  const [pathLength, setPathLength] = useState(2000)
   const lastScrollY = useRef(0)
 
   // Cinematic autoscrolling sequence
@@ -174,13 +175,19 @@ export default function App() {
   }
 
   useEffect(() => {
+    if (pathRef.current) {
+      setPathLength(pathRef.current.getTotalLength())
+    }
+  }, [])
+
+  useEffect(() => {
     const unsubscribe = scrollYProgress.onChange((v) => {
       setScrollProgress(v)
       
       // Calculate normalized X and Y for the pencil based exactly on the SVG path tip
       if (pathRef.current && mainRef.current) {
         const path = pathRef.current
-        const totalLength = path.getTotalLength()
+        const totalLength = path.getTotalLength() || 2000
         const currentLength = v * totalLength
         const point = path.getPointAtLength(currentLength)
         
@@ -231,17 +238,6 @@ export default function App() {
     if (token && email && role) setUser({ email, role, token })
 
     const ctx = gsap.context(() => {
-      gsap.to(pathRef.current, {
-        strokeDashoffset: 0,
-        ease: "none",
-        scrollTrigger: {
-          trigger: mainRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.5,
-        }
-      })
-
       gsap.utils.toArray('.content-reveal').forEach(el => {
         gsap.fromTo(el, 
           { opacity: 0, y: 40 },
@@ -280,7 +276,7 @@ export default function App() {
         <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} pencilPos={pencilPos} isMainPage={true} />
 
         {/* Global Pencil Path Background */}
-        <div className="absolute inset-0 pointer-events-none z-0 hidden md:block">
+        <div className="absolute inset-0 pointer-events-none z-0 opacity-20 md:opacity-100">
           <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
             <path 
               ref={pathRef}
@@ -290,8 +286,8 @@ export default function App() {
               fill="none" 
               className="opacity-70"
               style={{ 
-                strokeDasharray: "2000", 
-                strokeDashoffset: 2000 - (scrollProgress * 2000) 
+                strokeDasharray: pathLength, 
+                strokeDashoffset: pathLength - (scrollProgress * pathLength) 
               }}
             />
           </svg>

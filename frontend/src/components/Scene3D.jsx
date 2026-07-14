@@ -22,8 +22,14 @@ function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
     // Dynamic tilt based on screen side
     let rz = x > 0 ? -Math.PI / 12 : Math.PI / 12
 
+    // Hero section hover (pass control to inner float animations)
+    if (s < 0.05) {
+      x = 0
+      y = 1
+      rz = Math.PI / 4
+    }
     // Erasing rotation flip when scrolling up
-    if (scrollDirection === 'up' && s < 0.99) {
+    else if (scrollDirection === 'up' && s < 0.99) {
       rz += Math.PI // Flip pencil 180 degrees so eraser points down
       rx = -Math.PI / 4 // Angle for eraser contact
     }
@@ -36,8 +42,8 @@ function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
       ry = 0
       rz = -Math.PI / 2 // Flat horizontal below text
     } 
-    // When scrolling stops (but not at the end), pencil rests vertically on the side margin
-    else if (!isScrolling) {
+    // When scrolling stops (but not at the end or hero), pencil rests vertically on the side margin
+    else if (!isScrolling && s >= 0.05) {
       x = x > 0 ? (viewport.width * 0.4) : (-viewport.width * 0.4) // Snap to nearest edge
       rx = 0
       ry = x > 0 ? -Math.PI / 4 : Math.PI / 4
@@ -63,7 +69,7 @@ function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
 
   return (
     <group ref={ref}>
-      <Pencil scale={1.2} />
+      <Pencil scale={1.2} isHero={scroll < 0.05} />
     </group>
   )
 }
