@@ -156,23 +156,29 @@ export default function App() {
               ref={pathRef}
               d="M 50% 10% C 70% 30%, 30% 50%, 50% 90%" 
               stroke="#2563EB" 
-              strokeWidth="2" 
-              strokeDasharray="8 8" 
+              strokeWidth="2.5" 
               fill="none" 
-              className="opacity-40"
-              style={{ strokeDashoffset: 2000, strokeDasharray: 2000 }} // Setup for GSAP drawing
+              className="opacity-60"
+              style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }} // Controlled dynamically via GSAP
             />
           </svg>
         </div>
 
-        {/* The Traveling Paper Ball (Fixed to center X, follows scroll Y) */}
+        {/* The Traveling Pencil leaving behind a path */}
         <div className="fixed top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] pointer-events-none z-50 hidden md:block">
            <motion.div 
-             className="absolute w-8 h-8 -ml-4 rounded-full shadow-lg bg-[#FAF7F0] border border-black/10 flex items-center justify-center overflow-hidden"
-             style={{ top: ballY }}
+             className="absolute w-12 h-12 -ml-6 -mt-6 origin-bottom-left"
+             style={{ 
+               top: ballY,
+               rotate: -35
+             }}
            >
-             {/* Crumpled texture simulation */}
-             <div className="w-full h-full opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 4px 4px, black 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
+             <svg className="w-full h-full drop-shadow-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M18 2L22 6L9 19H5V15L18 2Z" fill="#E0A96D" stroke="#111" strokeWidth="1.5"/>
+               <path d="M5 15L9 19L3 21L5 15Z" fill="#E8DCC4" stroke="#111" strokeWidth="1.5"/>
+               <path d="M3 21L4.5 19.5" stroke="#111" strokeWidth="1.5"/>
+               <path d="M16 4L20 8" stroke="#111" strokeWidth="1.5"/>
+             </svg>
            </motion.div>
         </div>
 
@@ -184,11 +190,11 @@ export default function App() {
               <span className="font-bold text-xl tracking-tight">Placify.</span>
             </div>
             <nav className="hidden md:flex gap-8 text-sm font-medium text-[#555555]">
-              <a href="#school" className="hover:text-black">The Journey</a>
-              <a href="#resume" className="hover:text-black">Intelligence</a>
-              <a href="#interview" className="hover:text-black">Practice</a>
+              <a href="#school" className="hover:text-black transition-colors">The Journey</a>
+              <a href="#resume" className="hover:text-black transition-colors">Intelligence</a>
+              <a href="#interview" className="hover:text-black transition-colors">Practice</a>
             </nav>
-            {user ? <span className="text-sm font-medium">{user.email}</span> : <button onClick={() => setIsAuthOpen(true)} className="btn-secondary text-sm">Sign In</button>}
+            {user ? <span className="text-sm font-medium">{user.email}</span> : <button onClick={() => setIsAuthOpen(true)} className="btn-secondary text-sm hover:scale-105 transition-transform">Sign In</button>}
           </div>
         </header>
 
@@ -197,9 +203,14 @@ export default function App() {
           
           {/* HERO */}
           <section className="min-h-[80vh] flex flex-col items-center justify-center text-center px-6 content-reveal">
-            <div className="inline-block transform -rotate-3 mb-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="inline-block transform -rotate-3 mb-6"
+            >
               <span className="font-serif italic text-3xl text-[#2563EB]">The Journey From</span>
-            </div>
+            </motion.div>
             <h1 className="text-6xl md:text-8xl font-bold tracking-tighter text-[#111111] mb-6">
               Classroom <br/> to Career.
             </h1>
@@ -207,8 +218,8 @@ export default function App() {
               Everything you need before your first offer letter.
             </p>
             <div className="flex gap-4">
-              <button className="btn-primary px-8 py-4 text-lg">Start Your Journey</button>
-              <button className="btn-secondary px-8 py-4 text-lg">Watch the Story</button>
+              <button className="btn-primary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98">Start Your Journey</button>
+              <button className="btn-secondary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98">Watch the Story</button>
             </div>
             
             <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-12 text-[#555555]">
@@ -219,31 +230,31 @@ export default function App() {
             </div>
           </section>
 
-          {/* 01 SCHOOL */}
+          {/* 01 SCHOOL: Text Left, Card Right */}
           <section id="school" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-4 space-y-6">
               <div className="font-mono text-sm text-[#555555]">01</div>
               <h2 className="text-4xl font-bold">School</h2>
               <p className="text-[#555555] text-lg">Every expert once struggled with the basics.</p>
             </div>
-            <div className="md:col-span-8 flex justify-center">
+            <div className="md:col-span-8 flex justify-center hover:scale-102 transition-transform duration-300">
               <NotebookVisual />
             </div>
           </section>
 
-          {/* 02 COLLEGE */}
+          {/* 02 COLLEGE: Card Left, Text Right */}
           <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-4 space-y-6">
+            <div className="md:col-span-8 order-2 md:order-1 flex justify-center hover:scale-102 transition-transform duration-300">
+              <LaptopVisual />
+            </div>
+            <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">02</div>
               <h2 className="text-4xl font-bold">College</h2>
               <p className="text-[#555555] text-lg">Learning becomes building.</p>
             </div>
-            <div className="md:col-span-8 flex justify-center">
-              <LaptopVisual />
-            </div>
           </section>
 
-          {/* 03 LEARNING & BUILDING */}
+          {/* 03 LEARNING & BUILDING: Text Left, Card Right */}
           <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-4 space-y-6">
               <div className="font-mono text-sm text-[#555555]">03</div>
@@ -252,7 +263,7 @@ export default function App() {
             </div>
             <div className="md:col-span-8 flex justify-center gap-4 perspective-1000">
               {[1, 2, 3].map(i => (
-                <div key={i} className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}>
+                <div key={i} className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] hover:rotate-y-[0deg] transition-transform duration-500 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}>
                   <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold">C{i}</div>
                   <div className="space-y-2">
                     <div className="w-full h-2 bg-black/10 rounded"></div>
@@ -263,21 +274,21 @@ export default function App() {
             </div>
           </section>
 
-          {/* 04 RESUME INTELLIGENCE */}
+          {/* 04 RESUME INTELLIGENCE: Card Left, Text Right */}
           <section id="resume" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-4 space-y-6">
-              <div className="font-mono text-sm text-[#555555]">04</div>
-              <h2 className="text-4xl font-bold text-balance">Resume Intelligence</h2>
-              <p className="text-[#555555] text-lg">AI that understands you better than words.</p>
-            </div>
-            <div className="md:col-span-8 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden max-h-[600px] overflow-y-auto">
+            <div className="md:col-span-8 order-2 md:order-1 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden max-h-[600px] overflow-y-auto">
               <Suspense fallback={<div>Loading Analyzer...</div>}>
                 <ResumeAnalyzer apiKey="" data={resumeData} updateData={setResumeData} addToast={addToast} />
               </Suspense>
             </div>
+            <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
+              <div className="font-mono text-sm text-[#555555]">04</div>
+              <h2 className="text-4xl font-bold text-balance">Resume Intelligence</h2>
+              <p className="text-[#555555] text-lg">AI that understands you better than words.</p>
+            </div>
           </section>
 
-          {/* 05 INTERVIEW PRACTICE */}
+          {/* 05 INTERVIEW PRACTICE: Text Left, Card Right */}
           <section id="interview" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-4 space-y-6">
               <div className="font-mono text-sm text-[#555555]">05</div>
@@ -291,22 +302,37 @@ export default function App() {
             </div>
           </section>
 
-          {/* 06 PLACEMENT */}
+          {/* 06 PLACEMENT: Card Left, Text Right */}
           <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-4 space-y-6">
+            <div className="md:col-span-8 order-2 md:order-1 flex justify-center hover:scale-102 transition-transform duration-300">
+               <EnvelopeVisual />
+            </div>
+            <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">06</div>
               <h2 className="text-4xl font-bold">Placement</h2>
               <p className="text-[#555555] text-lg">Your hard work. Their offer. Your moment.</p>
-            </div>
-            <div className="md:col-span-8 flex justify-center">
-               <EnvelopeVisual />
             </div>
           </section>
 
           {/* FOOTER */}
           <footer className="text-center pt-32 pb-16 space-y-16 content-reveal">
-            <div className="inline-block transform -rotate-3 text-5xl md:text-7xl">
-              <span className="font-serif italic text-[#2563EB]">Y</span>ou Write <br/> the future.
+            <div className="inline-block transform -rotate-3 text-5xl md:text-7xl relative px-4">
+              <span className="font-serif italic text-[#2563EB]">Y</span>ou Write <br/> the{' '}
+              <span className="relative inline-block">
+                future.
+                <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#2563EB]" viewBox="0 0 100 10" preserveAspectRatio="none">
+                  <motion.path 
+                    d="M0,5 Q50,0 100,5" 
+                    stroke="currentColor" 
+                    strokeWidth="3" 
+                    fill="none"
+                    initial={{ pathLength: 0 }}
+                    whileInView={{ pathLength: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                  />
+                </svg>
+              </span>
             </div>
             
             <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-start text-left border-t border-black/10 pt-16 gap-12 text-[#555555]">
