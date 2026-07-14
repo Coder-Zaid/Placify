@@ -255,10 +255,13 @@ export default function App() {
               ref={pathRef}
               d="M 50,2 C 65,8 80,10 80,12 C 80,14 65,16 60,14 C 55,12 60,10 70,12 C 80,14 85,18 70,22 C 55,26 30,22 15,28 C 0,34 15,36 20,34 C 25,32 20,30 10,32 C 0,34 5,40 20,42 C 35,44 65,42 85,48 C 100,54 85,58 75,56 C 65,54 70,52 80,54 C 95,56 85,62 50,66 C 15,70 10,74 20,72 C 30,70 25,68 15,70 C 5,72 25,80 50,84 C 75,88 85,90 70,92 C 55,94 50,96 50,98"
               stroke="#333333" 
-              strokeWidth="0.4" 
+              strokeWidth="0.5" 
               fill="none" 
-              className="opacity-30"
-              style={{ strokeDasharray: 2000, strokeDashoffset: 2000 }}
+              className="opacity-70"
+              style={{ 
+                strokeDasharray: "8 2000", // Leaves a short 8-unit temporary trail behind the pencil tip
+                strokeDashoffset: 2000 - (scrollProgress * 2000) 
+              }}
             />
           </svg>
         </div>

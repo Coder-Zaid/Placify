@@ -48,18 +48,18 @@ function MovingPencil({ scroll, isScrolling }) {
       rz = -Math.PI / 4 + (Math.PI / 2) * t
     } else {
       const t = Math.min(1, (s - 0.9) / 0.1)
-      x = 3.5 - 3.5 * t
-      y = -1.5 - 4.5 * t
+      x = 3.5 - 3.5 * t // Centers horizontally
+      y = -1.5 - 2.0 * t // Drops down to -3.5 (resting visible area)
       rx = 0
       ry = 0
       rz = -Math.PI / 2
     }
 
-    // When scrolling stops (isScrolling is false), pencil sleeps flat at the bottom of the viewport
+    // When scrolling stops, pencil sleeps flat at the bottom of the visible screen viewport
     if (!isScrolling && s < 0.9) {
-      y = -4 // Moves to the bottom edge of the viewport
-      rx = 0 // Flat laying down
-      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2 // Points horizontally left or right
+      y = -3.3 // Safe visible height for resting
+      rx = 0
+      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2
     }
 
     return { pos: [x, y, z], rot: [rx, ry, rz] }
