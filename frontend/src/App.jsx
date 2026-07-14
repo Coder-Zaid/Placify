@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import axios from 'axios'
-import { X, Play, Sparkles, BookOpen, Code2, Award, Briefcase, ChevronRight } from 'lucide-react'
+import { X, Play, Sparkles, BookOpen, Code2, Award, Briefcase, ChevronRight, BarChart2 } from 'lucide-react'
 
 import SmoothScroll from './components/SmoothScroll'
 import Scene3D from './components/Scene3D'
@@ -16,6 +16,7 @@ gsap.registerPlugin(ScrollTrigger)
 const BatchAnalysis = lazy(() => import('./components/BatchAnalysis'))
 const ResumeAnalyzer = lazy(() => import('./components/ResumeAnalyzer'))
 const InterviewModule = lazy(() => import('./components/InterviewModule'))
+const CohortAnalytics = lazy(() => import('./components/CohortAnalytics'))
 
 axios.defaults.baseURL = import.meta.env.PROD ? '' : 'http://localhost:8000';
 axios.interceptors.request.use((config) => {
@@ -142,6 +143,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isStoryOpen, setIsStoryOpen] = useState(false)
+  const [resumeMode, setResumeMode] = useState('single') // single or batch
   const { toasts, addToast, removeToast } = useToast()
   
   const [resumeData, setResumeData] = useState({ jdText: '', resumeFile: null, resumeBase64: '', results: null, isLoading: false, error: '' })
@@ -152,7 +154,19 @@ export default function App() {
   });
 
   const [scrollProgress, setScrollProgress] = useState(0)
-  const ballY = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
+  // Cinematic autoscrolling sequence
+  const startCinematicScroll = () => {
+    const targetIds = ['school', 'college', 'projects', 'resume', 'interview', 'placement', 'footer']
+    let currentDelay = 0
+    targetIds.forEach((id) => {
+      setTimeout(() => {
+        const el = document.getElementById(id)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, currentDelay)
+      currentDelay += 3500
+    })
+  }
 
   useEffect(() => {
     const unsubscribe = scrollYProgress.onChange((v) => {
@@ -192,11 +206,11 @@ export default function App() {
 
   return (
     <SmoothScroll>
-      <div ref={mainRef} className="relative min-h-screen font-display overflow-hidden selection:bg-[#2563EB] selection:text-white bg-[#FAF7F0] bg-opacity-95">
+      <div ref={mainRef} className="relative min-h-screen font-display overflow-hidden selection:bg-[#2563EB] selection:text-white bg-transparent">
         
-        {/* Vintage Paper Texture and Fiber Overlay */}
-        <div className="fixed inset-0 z-[-99] pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,_transparent_0%,_#FAF7F0_80%)]" />
-        <div className="fixed inset-0 z-[-98] pointer-events-none opacity-5 mix-blend-multiply" 
+        {/* Vintage Paper Texture and Fiber Overlay - Moved behind the 3D Canvas context */}
+        <div className="fixed inset-0 z-[-150] pointer-events-none opacity-60 bg-[radial-gradient(circle_at_center,_transparent_0%,_#FAF7F0_80%)] bg-[#FAF7F0]" />
+        <div className="fixed inset-0 z-[-140] pointer-events-none opacity-5 mix-blend-multiply" 
              style={{ 
                backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 500 500\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' 
              }} 
@@ -259,12 +273,20 @@ export default function App() {
               Everything you need before your first offer letter.
             </p>
             <div className="flex gap-4">
-              <button className="btn-primary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98">Start Your Journey</button>
               <button 
-                onClick={() => setIsStoryOpen(true)}
-                className="btn-secondary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98"
+                onClick={() => {
+                  const el = document.getElementById('school')
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }}
+                className="btn-primary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98"
               >
-                Watch the Story
+                Start Your Journey
+              </button>
+              <button 
+                onClick={startCinematicScroll}
+                className="btn-secondary px-8 py-4 text-lg hover:scale-105 transition-transform active:scale-98 flex items-center gap-2"
+              >
+                <Play className="w-4 h-4 fill-current" /> Watch the Story
               </button>
             </div>
             
@@ -289,7 +311,7 @@ export default function App() {
           </section>
 
           {/* 02 COLLEGE: Card Left, Text Right */}
-          <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
+          <section id="college" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-8 order-2 md:order-1 flex justify-center">
               <LaptopVisual />
             </div>
@@ -300,44 +322,75 @@ export default function App() {
             </div>
           </section>
 
-          {/* 03 LEARNING & BUILDING: Text Left, Card Right */}
-          <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-4 space-y-6">
-              <div className="font-mono text-sm text-[#555555]">03</div>
-              <h2 className="text-4xl font-bold text-balance">Learning & Building</h2>
-              <p className="text-[#555555] text-lg">Skills, projects and consistency shape your future.</p>
+          {/* 03 LEARNING & BUILDING: Text Left, Dashboard Right */}
+          <section id="projects" className="max-w-7xl mx-auto px-6 space-y-12 content-reveal">
+            <div className="grid md:grid-cols-12 gap-12 items-center">
+              <div className="md:col-span-4 space-y-6">
+                <div className="font-mono text-sm text-[#555555]">03</div>
+                <h2 className="text-4xl font-bold text-balance">Learning & Building</h2>
+                <p className="text-[#555555] text-lg">Skills, projects, and cohort analytics define candidate standings.</p>
+              </div>
+              <div className="md:col-span-8 flex justify-center gap-4 perspective-1000">
+                {[1, 2, 3].map(i => (
+                  <motion.div 
+                    key={i} 
+                    whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
+                    className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}
+                  >
+                    <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold">C{i}</div>
+                    <div className="space-y-2">
+                      <div className="w-full h-2 bg-black/10 rounded"></div>
+                      <div className="w-2/3 h-2 bg-black/5 rounded"></div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-            <div className="md:col-span-8 flex justify-center gap-4 perspective-1000">
-              {[1, 2, 3].map(i => (
-                <motion.div 
-                  key={i} 
-                  whileHover={{ rotateY: 0, scale: 1.05, y: -8 }}
-                  className={`w-40 h-56 bg-white rounded-xl shadow-xl border border-black/5 transform rotate-y-[-20deg] transition-all duration-300 ${i===2 ? '-translate-y-8 z-10' : ''} p-4 flex flex-col justify-between`}
-                >
-                  <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-bold">C{i}</div>
-                  <div className="space-y-2">
-                    <div className="w-full h-2 bg-black/10 rounded"></div>
-                    <div className="w-2/3 h-2 bg-black/5 rounded"></div>
-                  </div>
-                </motion.div>
-              ))}
+            
+            {/* Cohort Analytics Embedded */}
+            <div className="bg-white rounded-2xl shadow-xl border border-black/5 p-6 md:p-8">
+              <div className="flex items-center gap-2 mb-6">
+                <BarChart2 className="w-5 h-5 text-[#2563EB]" />
+                <h3 className="font-bold text-lg">Cohort analytics dashboard</h3>
+              </div>
+              <Suspense fallback={<div>Loading Cohort Analytics...</div>}>
+                <CohortAnalytics results={[]} />
+              </Suspense>
             </div>
           </section>
 
           {/* 04 RESUME INTELLIGENCE: Card Left, Text Right */}
           <section id="resume" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <motion.div 
-              whileHover={{ scale: 1.01 }}
-              className="md:col-span-8 order-2 md:order-1 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden max-h-[600px] overflow-y-auto"
-            >
-              <Suspense fallback={<div>Loading Analyzer...</div>}>
-                <ResumeAnalyzer apiKey="" data={resumeData} updateData={setResumeData} addToast={addToast} />
+            <div className="md:col-span-8 order-2 md:order-1 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 overflow-hidden min-h-[500px]">
+              {/* Single / Batch Selection Toggle */}
+              <div className="flex gap-4 mb-6 border-b border-black/5 pb-4">
+                <button 
+                  onClick={() => setResumeMode('single')}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${resumeMode === 'single' ? 'bg-[#111] text-white' : 'text-gray-500 hover:bg-black/5'}`}
+                >
+                  Single Resume Analyzer
+                </button>
+                <button 
+                  onClick={() => setResumeMode('batch')}
+                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${resumeMode === 'batch' ? 'bg-[#111] text-white' : 'text-gray-500 hover:bg-black/5'}`}
+                >
+                  Batch screening (CSV)
+                </button>
+              </div>
+
+              <Suspense fallback={<div>Loading Module...</div>}>
+                {resumeMode === 'single' ? (
+                  <ResumeAnalyzer apiKey="" data={resumeData} updateData={setResumeData} addToast={addToast} />
+                ) : (
+                  <BatchAnalysis addToast={addToast} />
+                )}
               </Suspense>
-            </motion.div>
+            </div>
+            
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">04</div>
               <h2 className="text-4xl font-bold text-balance">Resume Intelligence</h2>
-              <p className="text-[#555555] text-lg">AI that understands you better than words.</p>
+              <p className="text-[#555555] text-lg">AI that understands single resumes and handles batch analysis pipelines.</p>
             </div>
           </section>
 
@@ -359,7 +412,7 @@ export default function App() {
           </section>
 
           {/* 06 PLACEMENT: Card Left, Text Right */}
-          <section className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
+          <section id="placement" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
             <div className="md:col-span-8 order-2 md:order-1 flex justify-center">
                <EnvelopeVisual />
             </div>
@@ -371,7 +424,7 @@ export default function App() {
           </section>
 
           {/* FOOTER */}
-          <footer className="text-center pt-32 pb-32 space-y-16 content-reveal">
+          <footer id="footer" className="text-center pt-32 pb-32 space-y-16 content-reveal">
             <div className="inline-block transform -rotate-3 text-5xl md:text-7xl relative px-4">
               <span className="font-serif italic text-[#2563EB]">Y</span>ou Write <br/> the{' '}
               <span className="relative inline-block">
@@ -416,60 +469,6 @@ export default function App() {
             </div>
           </footer>
         </div>
-
-        {/* Watch Story Modal */}
-        <AnimatePresence>
-          {isStoryOpen && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-md"
-            >
-              <motion.div 
-                initial={{ scale: 0.95 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.95 }}
-                className="w-full max-w-lg bg-[#FAF7F0] rounded-2xl p-8 relative border border-black/5 shadow-2xl"
-              >
-                <button 
-                  onClick={() => setIsStoryOpen(false)}
-                  className="absolute top-4 right-4 p-2 hover:bg-black/5 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#2563EB]" />
-                    <h3 className="font-bold text-xl">The Placify Narrative</h3>
-                  </div>
-                  <div className="space-y-4 text-sm text-[#555] font-serif leading-relaxed">
-                    <div className="flex gap-3">
-                      <div className="font-bold text-[#111] min-w-[50px]">School:</div>
-                      <p>Mastering core syntax, algorithms, and setting up the dream repository.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="font-bold text-[#111] min-w-[50px]">College:</div>
-                      <p>Building real apps, shipping code, and working through the nights.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="font-bold text-[#111] min-w-[50px]">Placify:</div>
-                      <p>Optimizing metrics, refining candidate resumes, and passing the interviews.</p>
-                    </div>
-                  </div>
-                  <div className="pt-4">
-                    <button 
-                      onClick={() => setIsStoryOpen(false)}
-                      className="btn-primary w-full py-3"
-                    >
-                      Start Journey
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </SmoothScroll>
   )
