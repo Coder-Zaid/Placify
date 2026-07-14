@@ -156,6 +156,9 @@ export default function App() {
   });
 
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [pencilPos, setPencilPos] = useState({ x: 0, y: 0 })
+  const [scrollDirection, setScrollDirection] = useState('down')
+  const lastScrollY = useRef(0)
 
   // Cinematic autoscrolling sequence
   const startCinematicScroll = () => {
@@ -173,12 +176,28 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = scrollYProgress.onChange((v) => {
       setScrollProgress(v)
+      
+      // Calculate normalized X and Y for the pencil based exactly on the SVG path tip
+      if (pathRef.current && mainRef.current) {
+        const path = pathRef.current
+        const totalLength = path.getTotalLength()
+        const currentLength = v * totalLength
+        const point = path.getPointAtLength(currentLength)
+        
+        // point.x is 0-100 in viewBox. Map to normalized screen (-0.5 to 0.5)
+        const normalizedX = (point.x / 100) - 0.5
+        
+        // point.y is 0-100 in viewBox. Map to normalized screen Y
+        const containerH = mainRef.current.clientHeight
+        const pointYPixels = (point.y / 100) * containerH
+        const screenYPixels = pointYPixels - window.scrollY
+        const normalizedY = 0.5 - (screenYPixels / window.innerHeight)
+        
+        setPencilPos({ x: normalizedX, y: normalizedY })
+      }
     })
     return () => unsubscribe()
   }, [scrollYProgress])
-
-  const [scrollDirection, setScrollDirection] = useState('down')
-  const lastScrollY = useRef(0)
 
   // Scroll active/idle state and direction listener
   useEffect(() => {
@@ -258,7 +277,7 @@ export default function App() {
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthSuccess={setUser} addToast={addToast} />
 
         {/* 3D background elements canvas */}
-        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} isMainPage={true} />
+        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} pencilPos={pencilPos} isMainPage={true} />
 
         {/* Global Pencil Path Background */}
         <div className="absolute inset-0 pointer-events-none z-0 hidden md:block">

@@ -1,66 +1,47 @@
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment, ContactShadows } from '@react-three/drei'
 import { useRef } from 'react'
 import * as THREE from 'three'
 import { Pencil, Notebook, GradCap, Laptop, PaperBall } from './Models3D'
 
-function MovingPencil({ scroll, isScrolling, scrollDirection }) {
+function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
   const ref = useRef()
+  const { viewport } = useThree()
 
-  // Calculate target positions based on scroll percent (0 to 1)
-  const getTargets = (s) => {
-    let x = 0
-    let y = 3.5 - 7 * s // Moves Y from top to bottom viewport to track drawing tip
+  // Calculate target positions dynamically using exact SVG path screen coordinates
+  const getTargets = (s, pPos) => {
+    // pPos contains normalized coordinates:
+    // x: -0.5 (left edge of screen) to 0.5 (right edge)
+    // y: 0.5 (top edge of screen) to -0.5 (bottom edge)
+    let x = (pPos?.x || 0) * viewport.width
+    let y = (pPos?.y || 0) * viewport.height
     let z = 0
     let rx = Math.PI / 4
     let ry = 0
-    let rz = Math.PI / 6
-
-    // Synchronize X coordinates with SVG path weaving:
-    if (s < 0.15) {
-      const t = s / 0.15
-      x = 0 + 2.5 * t // Center to Right
-      rz = Math.PI / 4 - (Math.PI / 3) * t
-    } else if (s < 0.3) {
-      const t = (s - 0.15) / 0.15
-      x = 2.5 - 5 * t // Right to Left
-      rz = -Math.PI / 12 + (Math.PI / 3) * t
-    } else if (s < 0.45) {
-      const t = (s - 0.3) / 0.15
-      x = -2.5 + 5 * t // Left to Right
-      rz = Math.PI / 4 - (Math.PI / 3) * t
-    } else if (s < 0.6) {
-      const t = (s - 0.45) / 0.15
-      x = 2.5 - 5 * t // Right to Left
-      rz = -Math.PI / 12 + (Math.PI / 3) * t
-    } else if (s < 0.75) {
-      const t = (s - 0.6) / 0.15
-      x = -2.5 + 5 * t // Left to Right
-      rz = Math.PI / 4 - (Math.PI / 3) * t
-    } else if (s < 0.9) {
-      const t = (s - 0.75) / 0.15
-      x = 2.5 - 2.5 * t // Right to Center
-      rz = -Math.PI / 12 + (Math.PI / 3) * t
-    } else {
-      const t = Math.min(1, (s - 0.9) / 0.1)
-      x = 0
-      y = -2.8 // resting y height
-      rx = 0
-      ry = 0
-      rz = -Math.PI / 2 // Flat horizontal
-    }
+    
+    // Dynamic tilt based on screen side
+    let rz = x > 0 ? -Math.PI / 12 : Math.PI / 12
 
     // Erasing rotation flip when scrolling up
-    if (scrollDirection === 'up' && s < 0.9) {
+    if (scrollDirection === 'up' && s < 0.99) {
       rz += Math.PI // Flip pencil 180 degrees so eraser points down
       rx = -Math.PI / 4 // Angle for eraser contact
     }
 
-    // When scrolling stops, pencil sleeps flat at bottom of current visible screen
-    if (!isScrolling && s < 0.9) {
-      y = -3.3 // Safe visible height for resting
+    // Final sleep mode at the end
+    if (s >= 0.99) {
+      x = 0
+      y = -2.8 // resting footer height
       rx = 0
-      rz = x > 0 ? Math.PI / 2 : -Math.PI / 2
+      ry = 0
+      rz = -Math.PI / 2 // Flat horizontal below text
+    } 
+    // When scrolling stops (but not at the end), pencil rests vertically on the side margin
+    else if (!isScrolling) {
+      x = x > 0 ? (viewport.width * 0.4) : (-viewport.width * 0.4) // Snap to nearest edge
+      rx = 0
+      ry = x > 0 ? -Math.PI / 4 : Math.PI / 4
+      rz = 0 // Rest vertically (straight up)
     }
 
     return { pos: [x, y, z], rot: [rx, ry, rz] }
@@ -68,7 +49,7 @@ function MovingPencil({ scroll, isScrolling, scrollDirection }) {
 
   useFrame(() => {
     if (!ref.current) return
-    const targets = getTargets(scroll)
+    const targets = getTargets(scroll, pencilPos)
     
     // Smooth lerp coordinates
     ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targets.pos[0], 0.08)
