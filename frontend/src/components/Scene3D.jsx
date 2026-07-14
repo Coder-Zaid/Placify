@@ -54,7 +54,7 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
     // Final sleep mode at the end
     if (s >= 0.99) {
       x = 0
-      y = -2.8 // resting footer height
+      y = -3.4 // resting footer height (lower down)
       rx = 0
       ry = 0
       rz = -Math.PI / 2 // Flat horizontal below text
@@ -67,14 +67,17 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
       rz = 0 // Rest vertically (straight up)
     }
 
+    // Dynamic lerp weights: snap instantly (0.95) when scrolling to prevent lag, smooth (0.06) when parking
+    const lerpWeight = isScrolling ? 0.95 : 0.06
+
     // Smooth lerp coordinates
-    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, x, 0.15)
-    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, y, 0.15)
-    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, z, 0.15)
+    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, x, lerpWeight)
+    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, y, lerpWeight)
+    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, z, lerpWeight)
     
-    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, rx, 0.1)
-    ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, ry, 0.1)
-    ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, rz, 0.1)
+    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, rx, lerpWeight)
+    ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, ry, lerpWeight)
+    ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, rz, lerpWeight)
   })
 
   return (

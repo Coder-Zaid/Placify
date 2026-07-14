@@ -287,7 +287,7 @@ export default function App() {
               className="opacity-70"
               style={{ 
                 strokeDasharray: pathLength, 
-                strokeDashoffset: pathLength - (scrollProgress * pathLength) 
+                strokeDashoffset: pathLength - (Math.max(0, scrollProgress - 0.004) * pathLength) 
               }}
             />
           </svg>
