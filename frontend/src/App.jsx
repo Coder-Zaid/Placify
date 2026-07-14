@@ -32,11 +32,11 @@ const EnvelopeVisual = ({ scrollProgress, user }) => {
   const flapProgress = Math.min(1, Math.max(0, (scrollProgress - 0.80) / 0.05))
   const flapRotation = -140 * flapProgress
 
-  // Letter slides up second: progress 0.84 to 0.94
-  const letterProgress = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.08))
+  // Letter slides up second: progress 0.82 to 0.88 (fully open before page end)
+  const letterProgress = Math.min(1, Math.max(0, (scrollProgress - 0.82) / 0.06))
   const letterY = -80 * letterProgress
   const letterScale = 0.95 + 0.1 * letterProgress
-  const letterOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.02))
+  const letterOpacity = Math.min(1, Math.max(0, (scrollProgress - 0.82) / 0.02))
 
   // Extract display name from user's email if logged in
   const displayName = user && user.email 
