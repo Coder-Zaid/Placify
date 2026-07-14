@@ -4,17 +4,34 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { Pencil, Notebook, GradCap, Laptop, PaperBall } from './Models3D'
 
-function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
+function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
   const ref = useRef()
   const { viewport } = useThree()
 
-  // Calculate target positions dynamically using exact SVG path screen coordinates
-  const getTargets = (s, pPos) => {
-    // pPos contains normalized coordinates:
-    // x: -0.5 (left edge of screen) to 0.5 (right edge)
-    // y: 0.5 (top edge of screen) to -0.5 (bottom edge)
-    let x = (pPos?.x || 0) * viewport.width
-    let y = (pPos?.y || 0) * viewport.height
+  useFrame(() => {
+    if (!ref.current) return
+    const path = pathRef?.current
+    const main = mainRef?.current
+    if (!path || !main) return
+
+    // 1. Calculate precise scroll progress directly from the DOM scroll
+    const scrollY = window.scrollY
+    const maxScroll = main.clientHeight - window.innerHeight
+    const s = maxScroll > 0 ? scrollY / maxScroll : 0
+
+    // 2. Extract SVG path tip coordinates
+    const totalLength = path.getTotalLength() || 2000
+    const point = path.getPointAtLength(s * totalLength)
+
+    // 3. Map viewBox percentage to normalized screen coordinates
+    const normalizedX = (point.x / 100) - 0.5
+    const pointYPixels = (point.y / 100) * main.clientHeight
+    const screenYPixels = pointYPixels - scrollY
+    const normalizedY = 0.5 - (screenYPixels / window.innerHeight)
+
+    // 4. Map normalized coordinates to world coordinates
+    let x = normalizedX * viewport.width
+    let y = normalizedY * viewport.height
     let z = 0
     let rx = Math.PI / 4
     let ry = 0
@@ -50,26 +67,19 @@ function MovingPencil({ scroll, isScrolling, scrollDirection, pencilPos }) {
       rz = 0 // Rest vertically (straight up)
     }
 
-    return { pos: [x, y, z], rot: [rx, ry, rz] }
-  }
-
-  useFrame(() => {
-    if (!ref.current) return
-    const targets = getTargets(scroll, pencilPos)
-    
     // Smooth lerp coordinates
-    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, targets.pos[0], 0.08)
-    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, targets.pos[1], 0.08)
-    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, targets.pos[2], 0.08)
+    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, x, 0.15)
+    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, y, 0.15)
+    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, z, 0.15)
     
-    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, targets.rot[0], 0.08)
-    ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, targets.rot[1], 0.08)
-    ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, targets.rot[2], 0.08)
+    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, rx, 0.1)
+    ref.current.rotation.y = THREE.MathUtils.lerp(ref.current.rotation.y, ry, 0.1)
+    ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, rz, 0.1)
   })
 
   return (
     <group ref={ref}>
-      <Pencil scale={1.2} isHero={scroll < 0.05} />
+      <Pencil scale={1.2} />
     </group>
   )
 }
@@ -110,7 +120,7 @@ function HeroProps({ scroll }) {
   )
 }
 
-export default function Scene3D({ scroll = 0, isScrolling = false, scrollDirection = 'down', isMainPage = true }) {
+export default function Scene3D({ scroll = 0, isScrolling = false, scrollDirection = 'down', pathRef, mainRef, isMainPage = true }) {
   if (!isMainPage) return null
 
   return (
@@ -130,7 +140,7 @@ export default function Scene3D({ scroll = 0, isScrolling = false, scrollDirecti
         <HeroProps scroll={scroll} />
 
         {/* The active 3D pencil guided by page scroll and resting when idle */}
-        <MovingPencil scroll={scroll} isScrolling={isScrolling} scrollDirection={scrollDirection} />
+        <MovingPencil isScrolling={isScrolling} scrollDirection={scrollDirection} pathRef={pathRef} mainRef={mainRef} />
 
         <ContactShadows position={[0, -8, 0]} opacity={0.25} scale={30} blur={3} far={15} />
       </Canvas>

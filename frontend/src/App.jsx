@@ -273,7 +273,7 @@ export default function App() {
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onAuthSuccess={setUser} addToast={addToast} />
 
         {/* 3D background elements canvas */}
-        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} pencilPos={pencilPos} isMainPage={true} />
+        <Scene3D scroll={scrollProgress} isScrolling={isScrolling} scrollDirection={scrollDirection} pathRef={pathRef} mainRef={mainRef} isMainPage={true} />
 
         {/* Global Pencil Path Background */}
         <div className="absolute inset-0 pointer-events-none z-0 opacity-20 md:opacity-100">
