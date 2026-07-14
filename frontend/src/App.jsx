@@ -65,6 +65,9 @@ const EnvelopeVisual = ({ scrollProgress }) => {
           </div>
         </motion.div>
 
+        {/* Front Cover / Bottom Half masking (Z-15) - Completely covers bottom of letter when closed */}
+        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-[#EBE5D8] rounded-b-xl border-t border-black/5 z-15" />
+
         {/* Letter pulling out of envelope */}
         <motion.div 
           className="absolute w-[90%] h-[95%] bg-white shadow-xl rounded p-6 space-y-3 z-10 flex flex-col justify-between"
