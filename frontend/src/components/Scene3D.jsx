@@ -19,9 +19,18 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
     const maxScroll = main.clientHeight - window.innerHeight
     const s = maxScroll > 0 ? scrollY / maxScroll : 0
 
-    // 2. Extract SVG path tip coordinates
+    // 2. Extract SVG path tip coordinates and compute tangent vector for curve alignment
     const totalLength = path.getTotalLength() || 2000
     const point = path.getPointAtLength(s * totalLength)
+    
+    // Sample a point slightly ahead to calculate tangent direction
+    const nextLength = Math.min(totalLength, s * totalLength + 1)
+    const pointAhead = path.getPointAtLength(nextLength)
+    
+    // Scale deltas by container aspect ratio to get visual screen tangent
+    const dx = (pointAhead.x - point.x) * window.innerWidth
+    const dy = (pointAhead.y - point.y) * main.clientHeight
+    const tangentAngle = Math.atan2(dy, dx)
 
     // 3. Map viewBox percentage to normalized screen coordinates
     const normalizedX = (point.x / 100) - 0.5
@@ -36,8 +45,8 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
     let rx = Math.PI / 4
     let ry = 0
     
-    // Dynamic tilt based on screen side
-    let rz = x > 0 ? -Math.PI / 12 : Math.PI / 12
+    // Set pencil angle to align perfectly with the visual tangent of the curve
+    let rz = tangentAngle - Math.PI / 2
 
     // Hero section hover (pass control to inner float animations)
     if (s < 0.05) {
