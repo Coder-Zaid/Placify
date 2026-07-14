@@ -82,7 +82,7 @@ export function PaperBall({ isTraveling = false, ...props }) {
   )
 }
 
-// Sleek White Apple Pencil
+// Sleek White Apple Pencil with pivot at the TIP [0, 0, 0]
 export function Pencil({ isHero = false, ...props }) {
   const ref = useRef()
   
@@ -99,33 +99,34 @@ export function Pencil({ isHero = false, ...props }) {
   return (
     <group ref={ref} {...props}>
       <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-        <group rotation={[Math.PI / 4, 0, Math.PI / 6]}>
-          {/* Apple Pencil Main Body (Smooth white cylinder with flat side) */}
-          <mesh castShadow receiveShadow position={[0, 0, 0]}>
-            <cylinderGeometry args={[0.15, 0.15, 3.4, 32]} />
-            <primitive object={applePencilBodyMaterial} />
-          </mesh>
-          
-          {/* Light grey pencil tip cone */}
-          <mesh castShadow receiveShadow position={[0, -1.8, 0]}>
-            <coneGeometry args={[0.15, 0.3, 32]} />
-            <primitive object={applePencilTipMaterial} />
-          </mesh>
-          
-          {/* Fine graphite point */}
-          <mesh castShadow receiveShadow position={[0, -1.96, 0]}>
+        {/* We tilt the container so that it looks naturally held, while pivot point [0,0,0] is at the tip */}
+        <group>
+          {/* Graphite Point (centered at Y=0.03, tip reaches Y=0) */}
+          <mesh castShadow receiveShadow position={[0, 0.03, 0]} rotation={[Math.PI, 0, 0]}>
             <coneGeometry args={[0.03, 0.06, 32]} />
             <primitive object={premiumMaterial} />
           </mesh>
 
-          {/* Minimalist grey cap line (Apple Pencil style) */}
-          <mesh castShadow receiveShadow position={[0, 1.68, 0]}>
+          {/* Light grey pencil tip cone (tip reaches Y=0.06, base at Y=0.36) */}
+          <mesh castShadow receiveShadow position={[0, 0.21, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.15, 0.3, 32]} />
+            <primitive object={applePencilTipMaterial} />
+          </mesh>
+
+          {/* Apple Pencil Main Body (cylinder of height 3.4, starting at Y=0.36, ending at Y=3.76) */}
+          <mesh castShadow receiveShadow position={[0, 2.06, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, 3.4, 32]} />
+            <primitive object={applePencilBodyMaterial} />
+          </mesh>
+
+          {/* Minimalist grey cap line (Apple Pencil style, at Y=3.78) */}
+          <mesh castShadow receiveShadow position={[0, 3.78, 0]}>
             <cylinderGeometry args={[0.151, 0.151, 0.04, 32]} />
             <meshStandardMaterial color="#CBD5E1" metalness={0.5} roughness={0.2} />
           </mesh>
           
-          {/* White top cap dome */}
-          <mesh castShadow receiveShadow position={[0, 1.73, 0]}>
+          {/* White top cap dome (at Y=3.8) */}
+          <mesh castShadow receiveShadow position={[0, 3.8, 0]}>
             <sphereGeometry args={[0.15, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <primitive object={applePencilBodyMaterial} />
           </mesh>
