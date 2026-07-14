@@ -26,18 +26,25 @@ axios.interceptors.request.use((config) => {
 })
 
 // Highly Realistic Envelope and Letter Visual
-const EnvelopeVisual = () => {
-  const [isOpen, setIsOpen] = useState(false)
+const EnvelopeVisual = ({ scrollProgress }) => {
+  // Map scroll progress (between 0.80 and 0.95) to open the envelope
+  // Flap opens first: progress 0.80 to 0.85
+  const flapProgress = Math.min(1, Math.max(0, (scrollProgress - 0.80) / 0.05))
+  const flapRotation = -180 * flapProgress
+
+  // Letter slides up second: progress 0.84 to 0.94
+  const letterProgress = Math.min(1, Math.max(0, (scrollProgress - 0.84) / 0.08))
+  const letterY = -140 * letterProgress
+  const letterScale = 0.98 + 0.07 * letterProgress
+
   return (
-    <div 
-      className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 cursor-pointer select-none"
-      onClick={() => setIsOpen(!isOpen)}
-    >
+    <div className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 select-none pb-20">
       {/* 3D Envelope Container */}
       <motion.div 
         className="absolute inset-0 w-full h-full relative"
-        animate={{ rotateY: isOpen ? 10 : 0, rotateX: isOpen ? 5 : 0 }}
-        transition={{ type: "spring", stiffness: 100 }}
+        style={{ transformStyle: "preserve-3d" }}
+        animate={{ rotateY: letterProgress * 8, rotateX: letterProgress * 5 }}
+        transition={{ type: "spring", stiffness: 60 }}
       >
         {/* 1. BACK PANEL (Z-0) */}
         <div className="absolute inset-0 bg-[#E8E2D5] rounded-xl shadow-2xl border border-black/10 z-0 overflow-hidden">
@@ -52,8 +59,7 @@ const EnvelopeVisual = () => {
         {/* 2. LETTER PANEL (Z-10) - Slides upwards */}
         <motion.div 
           className="absolute left-[5%] top-[10%] w-[90%] h-[80%] bg-white shadow-lg rounded p-6 space-y-3 z-10 flex flex-col justify-between border border-black/5"
-          animate={{ y: isOpen ? -110 : 0, scale: isOpen ? 1.05 : 0.98 }}
-          transition={{ type: "spring", stiffness: 80, delay: isOpen ? 0.25 : 0 }}
+          style={{ y: letterY, scale: letterScale }}
         >
           <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -78,24 +84,28 @@ const EnvelopeVisual = () => {
           </div>
         </motion.div>
 
-        {/* 3. FRONT POCKET (Z-20) - Covers bottom half */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[#DFD9CB] rounded-b-xl border-t border-black/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] z-20 flex justify-center items-end overflow-hidden">
-          {/* Diagonal overlay fold lines for realistic look */}
-          <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none" viewBox="0 0 100 50" preserveAspectRatio="none">
-            <path d="M 0,50 L 50,25 L 100,50 Z" fill="none" stroke="black" strokeWidth="0.5" />
-          </svg>
-        </div>
+        {/* 3. FRONT POCKET (Z-20) - Covers bottom half with V-cut */}
+        <div 
+          className="absolute inset-x-0 bottom-0 h-[60%] bg-[#DFD9CB] rounded-b-xl border-t border-black/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] z-20"
+          style={{
+            clipPath: 'polygon(0 100%, 100% 100%, 100% 0, 50% 35%, 0 0)'
+          }}
+        />
 
         {/* 4. TOP FLAP PANEL (Z-30) - Rotates up to open */}
         <motion.div 
-          className="absolute top-0 left-0 w-full h-1/2 bg-[#DFD9CB] origin-top rounded-t-xl z-30 flex justify-center items-end"
-          style={{ backfaceVisibility: 'hidden' }}
-          animate={{ rotateX: isOpen ? -180 : 0 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="absolute top-0 left-0 w-full h-[55%] bg-[#DFD9CB] origin-top rounded-t-xl z-30"
+          style={{ 
+            backfaceVisibility: 'hidden',
+            clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+            transformStyle: "preserve-3d"
+          }}
+          animate={{ rotateX: flapRotation }}
+          transition={{ type: "tween", ease: "linear" }}
         >
           {/* Wax seal */}
-          <div className="w-10 h-10 rounded-full bg-red-700 shadow-md border-2 border-red-800 flex items-center justify-center transform translate-y-5 z-40">
-            <span className="text-white font-serif text-sm font-bold">P</span>
+          <div className="w-8 h-8 rounded-full bg-red-700 shadow-md border border-red-800 flex items-center justify-center absolute left-[calc(50%-16px)] bottom-2 z-40">
+            <span className="text-white font-serif text-xs font-bold">P</span>
           </div>
         </motion.div>
 
@@ -713,8 +723,8 @@ export default function App() {
 
           {/* 06 PLACEMENT: Card Left, Text Right */}
           <section id="placement" className="max-w-7xl mx-auto px-6 grid md:grid-cols-12 gap-12 items-center content-reveal">
-            <div className="md:col-span-8 order-2 md:order-1 flex justify-center">
-               <EnvelopeVisual />
+            <div className="md:col-span-8 order-2 md:order-1 flex justify-center pt-24 pb-24">
+               <EnvelopeVisual scrollProgress={scrollProgress} />
             </div>
             <div className="md:col-span-4 order-1 md:order-2 space-y-6 md:pl-8">
               <div className="font-mono text-sm text-[#555555]">06</div>
