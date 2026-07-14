@@ -45,10 +45,15 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
       y = 1
       rz = Math.PI / 4
     }
-    // Erasing rotation flip when scrolling up
-    else if (scrollDirection === 'up' && s < 0.99) {
-      rz += Math.PI // Flip pencil 180 degrees so eraser points down
+    // Erasing rotation flip and offset when scrolling up
+    if (scrollDirection === 'up' && s < 0.99) {
+      rz += Math.PI // Rotate 180 degrees so eraser points down
       rx = -Math.PI / 4 // Angle for eraser contact
+      
+      // Offset the group position so the eraser tip (located 3.8 units up the body)
+      // sits exactly on the path coordinates (x, y)
+      x += 3.8 * Math.sin(rz)
+      y -= 3.8 * Math.cos(rz)
     }
 
     // Final sleep mode at the end (preserve exact path coordinates, only lie flat)
@@ -65,8 +70,8 @@ function MovingPencil({ isScrolling, scrollDirection, pathRef, mainRef }) {
       rz = 0 // Rest vertically (straight up)
     }
 
-    // Dynamic lerp weights: snap instantly (0.95) when scrolling to prevent lag, smooth (0.06) when parking
-    const lerpWeight = isScrolling ? 0.95 : 0.06
+    // Smooth snap lerp weight: 0.25 (buttery smooth snaps when scroll starts)
+    const lerpWeight = isScrolling ? 0.25 : 0.06
 
     // Smooth lerp coordinates
     ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, x, lerpWeight)
