@@ -171,23 +171,40 @@ export default function App() {
         <section id="hero" className="relative h-screen flex items-center justify-center">
           <div className="hero-content relative z-10 text-center px-6 max-w-5xl mx-auto pt-20 pointer-events-none">
             <motion.div 
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+                }
+              }}
               className="space-y-8"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-black/5 text-sm font-medium text-current shadow-sm">
+              <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 1, ease: 'easeOut' } } }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-black/5 text-sm font-medium text-current shadow-sm">
                 <Sparkles className="w-4 h-4 text-[#0F62FE]" />
                 <span>An Interactive Documentary.</span>
-              </div>
+              </motion.div>
               
-              <h1 className="text-6xl md:text-[7rem] font-medium tracking-tight text-balance leading-[1.05]">
-                From Classroom to <span className="text-transparent bg-clip-text bg-gradient-to-r from-current to-gray-400">Career.</span>
+              <h1 className="text-6xl md:text-[7rem] font-medium tracking-tight text-balance leading-[1.05] overflow-hidden">
+                {"From Classroom to Career.".split(" ").map((word, i) => (
+                  <motion.span
+                    key={i}
+                    className={`inline-block mr-[2vw] ${i >= 3 ? 'text-transparent bg-clip-text bg-gradient-to-r from-current to-gray-400' : ''}`}
+                    variants={{
+                      hidden: { opacity: 0, y: 100, rotate: 5 },
+                      visible: { opacity: 1, y: 0, rotate: 0, transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] } }
+                    }}
+                  >
+                    {word}
+                  </motion.span>
+                ))}
               </h1>
               
-              <p className="text-xl md:text-2xl opacity-70 max-w-2xl mx-auto text-balance">
+              <motion.p variants={{ hidden: { opacity: 0 }, visible: { opacity: 0.7, transition: { duration: 1.5, delay: 1 } } }} className="text-xl md:text-2xl max-w-2xl mx-auto text-balance">
                 Scroll to experience the journey.
-              </p>
+              </motion.p>
             </motion.div>
           </div>
         </section>

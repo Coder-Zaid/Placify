@@ -1,6 +1,5 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, ContactShadows, PresentationControls } from '@react-three/drei'
-import { EffectComposer, DepthOfField } from '@react-three/postprocessing'
 import { Pencil, Notebook, Laptop, GradCap, PaperSheets, ParticleSystem } from './Models3D'
 import * as THREE from 'three'
 import { useRef } from 'react'
@@ -54,10 +53,6 @@ export default function Scene3D({ scrollProgress = 0, currentSection = 'hero' })
         </PresentationControls>
 
         <ContactShadows position={[0, -5, 0]} opacity={0.4} scale={20} blur={2} far={10} />
-        
-        <EffectComposer>
-          <DepthOfField focusDistance={0.05} focalLength={0.15} bokehScale={2.5} height={480} />
-        </EffectComposer>
       </Canvas>
     </div>
   )
