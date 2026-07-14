@@ -30,59 +30,75 @@ const EnvelopeVisual = () => {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <div 
-      className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 cursor-pointer"
+      className="relative w-full aspect-[4/3] max-w-md mx-auto perspective-1000 cursor-pointer select-none"
       onClick={() => setIsOpen(!isOpen)}
     >
+      {/* 3D Envelope Container */}
       <motion.div 
-        className="absolute inset-0 bg-[#EBE5D8] rounded-xl shadow-2xl border border-black/10 flex items-center justify-center overflow-hidden"
-        animate={{ rotateY: isOpen ? 15 : 0, rotateX: isOpen ? 10 : 0 }}
+        className="absolute inset-0 w-full h-full relative"
+        animate={{ rotateY: isOpen ? 10 : 0, rotateX: isOpen ? 5 : 0 }}
         transition={{ type: "spring", stiffness: 100 }}
       >
-        {/* Decorative stamp in corner */}
-        <div className="absolute top-4 right-4 w-12 h-16 border-2 border-dashed border-red-800/40 p-1 flex items-center justify-center">
-          <div className="w-full h-full border border-red-800/20 bg-red-50/50 flex flex-col items-center justify-center font-serif text-[8px] text-red-800/60">
-            <span>OFFICIAL</span>
-            <span>STAMP</span>
+        {/* 1. BACK PANEL (Z-0) */}
+        <div className="absolute inset-0 bg-[#E8E2D5] rounded-xl shadow-2xl border border-black/10 z-0 overflow-hidden">
+          {/* Decorative interior details */}
+          <div className="absolute top-4 right-4 w-12 h-16 border-2 border-dashed border-red-800/10 p-1 flex items-center justify-center">
+            <div className="w-full h-full border border-red-800/10 bg-red-50/10 flex flex-col items-center justify-center font-serif text-[8px] text-red-800/30">
+              <span>PLACIFIED</span>
+            </div>
           </div>
         </div>
 
-        {/* Outer Flap */}
+        {/* 2. LETTER PANEL (Z-10) - Slides upwards */}
         <motion.div 
-          className="absolute top-0 left-0 w-full h-1/2 bg-[#DFD9CB] origin-top border-b border-black/10 z-20 flex justify-center items-end pb-4"
-          animate={{ rotateX: isOpen ? -140 : 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          {/* Wax Seal */}
-          <div className="w-10 h-10 rounded-full bg-red-700 shadow-md border-2 border-red-800 flex items-center justify-center transform translate-y-9 z-30">
-            <span className="text-white/60 font-serif text-xs font-bold">P</span>
-          </div>
-        </motion.div>
-
-        {/* Letter pulling out of envelope */}
-        <motion.div 
-          className="absolute w-[90%] h-[95%] bg-white shadow-xl rounded p-6 space-y-3 z-10 flex flex-col justify-between"
-          animate={{ y: isOpen ? -80 : 0, scale: isOpen ? 1.05 : 0.95 }}
-          transition={{ type: "spring", stiffness: 80, delay: isOpen ? 0.2 : 0 }}
+          className="absolute left-[5%] top-[10%] w-[90%] h-[80%] bg-white shadow-lg rounded p-6 space-y-3 z-10 flex flex-col justify-between border border-black/5"
+          animate={{ y: isOpen ? -110 : 0, scale: isOpen ? 1.05 : 0.98 }}
+          transition={{ type: "spring", stiffness: 80, delay: isOpen ? 0.25 : 0 }}
         >
           <div className="space-y-2">
-            <div className="text-center font-serif text-xs tracking-widest text-[#111] uppercase font-bold">Offer of Employment</div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] tracking-widest text-[#2563EB] font-bold">PLACIFY CORP.</span>
+              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+            </div>
             <div className="w-full h-px bg-black/10"></div>
-            <div className="font-serif text-[10px] text-[#555] space-y-1">
-              <p className="font-bold">Dear Candidate,</p>
-              <p>We are thrilled to offer you the role of <span className="text-[#2563EB] font-bold">Software Engineer</span>.</p>
-              <p>Your skills, experience, and performance stood out exceptionally during our cohort evaluations.</p>
+            <div className="font-serif text-[10px] text-[#333] space-y-2 leading-relaxed">
+              <p className="font-bold">Congratulations Candidate!</p>
+              <p>We are absolutely thrilled to extend you this offer for the position of <span className="text-[#2563EB] font-bold">Software Architect</span>.</p>
+              <p className="text-[9px] text-gray-500">Your performance in cohort building challenges was exemplary.</p>
             </div>
           </div>
           
           <div className="flex justify-between items-end border-t border-black/5 pt-2">
-            <div className="text-[8px] font-mono text-[#555]">Date: July 14, 2026</div>
+            <div className="text-[8px] font-mono text-gray-400">Date: July 14, 2026</div>
             <div className="text-right">
-              <div className="font-serif italic text-xs text-[#111]">Signature</div>
-              <div className="w-16 h-px bg-black/40 ml-auto mt-1"></div>
+              <div className="font-serif italic text-xs text-[#2563EB]">Signature</div>
+              <div className="w-16 h-px bg-black/30 ml-auto mt-1"></div>
               <div className="text-[6px] text-gray-400">Placify Board</div>
             </div>
           </div>
         </motion.div>
+
+        {/* 3. FRONT POCKET (Z-20) - Covers bottom half */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[#DFD9CB] rounded-b-xl border-t border-black/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] z-20 flex justify-center items-end overflow-hidden">
+          {/* Diagonal overlay fold lines for realistic look */}
+          <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none" viewBox="0 0 100 50" preserveAspectRatio="none">
+            <path d="M 0,50 L 50,25 L 100,50 Z" fill="none" stroke="black" strokeWidth="0.5" />
+          </svg>
+        </div>
+
+        {/* 4. TOP FLAP PANEL (Z-30) - Rotates up to open */}
+        <motion.div 
+          className="absolute top-0 left-0 w-full h-1/2 bg-[#DFD9CB] origin-top rounded-t-xl z-30 flex justify-center items-end"
+          style={{ backfaceVisibility: 'hidden' }}
+          animate={{ rotateX: isOpen ? -180 : 0 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+        >
+          {/* Wax seal */}
+          <div className="w-10 h-10 rounded-full bg-red-700 shadow-md border-2 border-red-800 flex items-center justify-center transform translate-y-5 z-40">
+            <span className="text-white font-serif text-sm font-bold">P</span>
+          </div>
+        </motion.div>
+
       </motion.div>
     </div>
   )
