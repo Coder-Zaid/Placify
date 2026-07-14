@@ -57,7 +57,6 @@ function MovingPencil({ scroll, isScrolling }) {
 
     // Apply resting rotation adjustments if user stops scrolling
     if (!isScrolling && s < 0.9) {
-      // Rotate pencil to a resting angle (e.g. leaning flat horizontally against the background)
       rz = x > 0 ? Math.PI / 2 : -Math.PI / 2
       rx = 0.1
     }
@@ -93,42 +92,21 @@ function HeroProps({ scroll }) {
   const ball1Ref = useRef()
   const ball2Ref = useRef()
   const ball3Ref = useRef()
+  
+  // Track a single scale factor
+  const factorRef = useRef(1)
 
   useFrame(() => {
-    // If scroll > 0.12 (past first page), fade out/scale to 0. Otherwise scale is normal.
-    const targetScale = scroll > 0.12 ? 0 : 1
-    const lerpSpeed = 0.1
+    const target = scroll > 0.12 ? 0 : 1
+    factorRef.current = THREE.MathUtils.lerp(factorRef.current, target, 0.1)
 
-    if (notebookRef.current) {
-      const current = notebookRef.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      notebookRef.current.scale.set(next * 0.5, next * 0.5, next * 0.5)
-    }
-    if (capRef.current) {
-      const current = capRef.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      capRef.current.scale.set(next * 0.6, next * 0.6, next * 0.6)
-    }
-    if (laptopRef.current) {
-      const current = laptopRef.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      laptopRef.current.scale.set(next * 0.7, next * 0.7, next * 0.7)
-    }
-    if (ball1Ref.current) {
-      const current = ball1Ref.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      ball1Ref.current.scale.set(next * 0.6, next * 0.6, next * 0.6)
-    }
-    if (ball2Ref.current) {
-      const current = ball2Ref.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      ball2Ref.current.scale.set(next * 0.8, next * 0.8, next * 0.8)
-    }
-    if (ball3Ref.current) {
-      const current = ball3Ref.current.scale.x
-      const next = THREE.MathUtils.lerp(current, targetScale, lerpSpeed)
-      ball3Ref.current.scale.set(next * 0.5, next * 0.5, next * 0.5)
-    }
+    const f = factorRef.current
+    if (notebookRef.current) notebookRef.current.scale.set(f * 0.6, f * 0.6, f * 0.6)
+    if (capRef.current) capRef.current.scale.set(f * 0.7, f * 0.7, f * 0.7)
+    if (laptopRef.current) laptopRef.current.scale.set(f * 0.8, f * 0.8, f * 0.8)
+    if (ball1Ref.current) ball1Ref.current.scale.set(f * 0.8, f * 0.8, f * 0.8)
+    if (ball2Ref.current) ball2Ref.current.scale.set(f * 1.1, f * 1.1, f * 1.1)
+    if (ball3Ref.current) ball3Ref.current.scale.set(f * 0.6, f * 0.6, f * 0.6)
   })
 
   return (
