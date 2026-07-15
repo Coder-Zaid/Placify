@@ -53,7 +53,7 @@ class UniversalLLMService:
                 self.provider = 'gemini'
                 self.working_model = working_model or 'gemini-2.0-flash'
                 self.client = genai.Client(api_key=self.api_key)
-                print(f"[LLM] ✓ Gemini provider auto-detected. Model: {self.working_model}")
+                print(f"[LLM] OK: Gemini provider auto-detected. Model: {self.working_model}")
                 return
         
         # Check for Anthropic (sk-ant prefix)
@@ -64,7 +64,7 @@ class UniversalLLMService:
                 self.provider = 'anthropic'
                 self.working_model = working_model or 'claude-3-5-sonnet-20241022'
                 self.client = anthropic.Anthropic(api_key=self.api_key)
-                print(f"[LLM] ✓ Anthropic provider auto-detected. Model: {self.working_model}")
+                print(f"[LLM] OK: Anthropic provider auto-detected. Model: {self.working_model}")
                 return
         
         # Check for Groq (gsk_ prefix)
@@ -80,7 +80,7 @@ class UniversalLLMService:
                     api_key=self.api_key,
                     base_url="https://api.groq.com/openai/v1"
                 )
-                print(f"[LLM] ✓ Groq provider auto-detected. Model: {self.working_model}")
+                print(f"[LLM] OK: Groq provider auto-detected. Model: {self.working_model}")
                 return
         
         # Check for OpenAI (sk- prefix, but not sk-ant)
@@ -91,7 +91,7 @@ class UniversalLLMService:
                 self.provider = 'openai'
                 self.working_model = working_model or 'gpt-4o-mini'
                 self.client = openai.OpenAI(api_key=self.api_key)
-                print(f"[LLM] ✓ OpenAI provider auto-detected. Model: {self.working_model}")
+                print(f"[LLM] OK: OpenAI provider auto-detected. Model: {self.working_model}")
                 return
         
         # Fallback: Try to auto-detect from generic GEMINI_API_KEY injection
@@ -103,7 +103,7 @@ class UniversalLLMService:
                     self.provider = 'gemini'
                     self.working_model = working_model or 'gemini-2.0-flash'
                     self.client = genai.Client(api_key=self.api_key)
-                    print(f"[LLM] ✓ Gemini provider auto-detected. Model: {self.working_model}")
+                    print(f"[LLM] OK: Gemini provider auto-detected. Model: {self.working_model}")
                     return
                 elif gemini_key.startswith('gsk_'):
                     self.api_key = gemini_key
@@ -113,7 +113,7 @@ class UniversalLLMService:
                         api_key=self.api_key,
                         base_url="https://api.groq.com/openai/v1"
                     )
-                    print(f"[LLM] ✓ Groq provider auto-detected from fallback. Model: {self.working_model}")
+                    print(f"[LLM] OK: Groq provider auto-detected from fallback. Model: {self.working_model}")
                     return
         
         # No valid API key found
@@ -262,7 +262,7 @@ class UniversalLLMService:
                 else:
                     raise Exception(f"Unknown provider: {self.provider}")
                 
-                print(f"[LLM] [{self.provider.upper()}] ✓ Response successful")
+                print(f"[LLM] [{self.provider.upper()}] SUCCESS: Response successful")
                 return result
             
             except Exception as e:
@@ -274,16 +274,16 @@ class UniversalLLMService:
                 # RATE LIMIT HANDLING: 10s sleep and retry
                 if any(keyword in error_str for keyword in ['429', 'quota', 'rate_limit', 'resource_exhausted', 'rate limited']):
                     if attempt < max_retries - 1:
-                        print(f"[LLM] [{self.provider.upper()}] ⏱ Rate limit hit. Sleeping 10s and retrying...")
+                        print(f"[LLM] [{self.provider.upper()}] TIME: Rate limit hit. Sleeping 10s and retrying...")
                         await asyncio.sleep(10)
                         continue
                     else:
-                        print(f"[LLM] [{self.provider.upper()}] ✗ Rate limit persists after {max_retries} retries")
+                        print(f"[LLM] [{self.provider.upper()}] FAIL: Rate limit persists after {max_retries} retries")
                         raise Exception(f"Rate limit reached. Daily quota may be exhausted. Wait 1 hour and retry.")
                 
                 # AUTHENTICATION ERRORS: Fail immediately
                 if any(keyword in error_str for keyword in ['invalid', 'authentication', 'unauthorized', 'permission', 'api_key', '401', '403']):
-                    print(f"[LLM] [{self.provider.upper()}] ✗ Auth error (permanent). Failing immediately.")
+                    print(f"[LLM] [{self.provider.upper()}] FAIL: Auth error (permanent). Failing immediately.")
                     raise Exception(f"Invalid {self.provider} API key. Please check your credentials.")
                 
                 # SERVICE UNAVAILABLE (503): Retry with backoff

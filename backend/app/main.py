@@ -12,7 +12,7 @@ from .database import engine, Base
 Base.metadata.create_all(bind=engine)
 
 # Import routes
-from .routes import analyze, auth_routes
+from .routes import analyze, auth_routes, interview_studio
 
 # Create FastAPI app
 app = FastAPI(
@@ -43,6 +43,7 @@ app.add_middleware(
 # Include routers
 app.include_router(analyze.router)
 app.include_router(auth_routes.router)
+app.include_router(interview_studio.router)
 
 
 @app.get("/")

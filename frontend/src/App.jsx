@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef, Suspense, lazy } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import axios from 'axios'
-import { X, Play, Sparkles, BookOpen, Code2, Award, Briefcase, ChevronRight, BarChart2 } from 'lucide-react'
+import { X, Play, Sparkles, BookOpen, Code2, Award, Briefcase, ChevronRight, BarChart2, Settings } from 'lucide-react'
 
 import SmoothScroll from './components/SmoothScroll'
 import Scene3D from './components/Scene3D'
 import Toast from './components/Toast'
 import AuthModal from './components/AuthModal'
 import { useToast } from './hooks/useToast'
+
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -317,6 +319,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isStoryOpen, setIsStoryOpen] = useState(false)
+
   const [resumeMode, setResumeMode] = useState('single') // single or batch
   const [isScrolling, setIsScrolling] = useState(false)
   const scrollTimeout = useRef(null)
@@ -480,7 +483,16 @@ export default function App() {
               <a href="#resume" className="hover:text-black transition-colors">Intelligence</a>
               <a href="#interview" className="hover:text-black transition-colors">Practice</a>
             </nav>
-            {user ? <span className="text-sm font-medium">{user.email}</span> : <button onClick={() => setIsAuthOpen(true)} className="btn-secondary text-sm hover:scale-105 transition-transform">Sign In</button>}
+            <div className="flex items-center gap-3">
+              <Link 
+                to="/settings" 
+                className="p-2 hover:bg-black/5 rounded-full transition-colors flex items-center justify-center"
+                title="API Configuration Settings"
+              >
+                <Settings className="w-5 h-5 text-[#555]" />
+              </Link>
+              {user ? <span className="text-sm font-medium">{user.email}</span> : <button onClick={() => setIsAuthOpen(true)} className="btn-secondary text-sm hover:scale-105 transition-transform">Sign In</button>}
+            </div>
           </div>
         </header>
 
@@ -698,6 +710,13 @@ export default function App() {
               <div className="font-mono text-sm text-[#555555]">05</div>
               <h2 className="text-4xl font-bold text-balance">Interview Practice</h2>
               <p className="text-[#555555] text-lg">Practice until confidence becomes natural.</p>
+              <Link
+                to="/interview-studio"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] text-white rounded-xl font-semibold text-sm hover:bg-[#1D4ED8] transition-colors shadow-lg hover:shadow-xl mt-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                Launch AI Interview Studio
+              </Link>
             </div>
             <motion.div 
               whileHover={{ scale: 1.01 }}
@@ -818,6 +837,9 @@ export default function App() {
             </div>
           </footer>
         </div>
+
+
+
       </div>
     </SmoothScroll>
   )

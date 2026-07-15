@@ -18,21 +18,27 @@ export default function APIKeySettings() {
     },
     OPENAI_API_KEY: {
       name: 'OpenAI GPT',
-      description: 'Backup provider. Get from: https://platform.openai.com/api-keys',
+      description: 'Get from: https://platform.openai.com/api-keys',
       placeholder: 'sk-...',
       order: 2
+    },
+    GROQ_API_KEY: {
+      name: 'Groq (Llama 3)',
+      description: 'Blazing fast inference. Get from: https://console.groq.com/',
+      placeholder: 'gsk_...',
+      order: 3
     },
     ANTHROPIC_API_KEY: {
       name: 'Anthropic Claude',
       description: 'Tertiary provider. Get from: https://console.anthropic.com/',
       placeholder: 'sk-ant-...',
-      order: 3
+      order: 4
     },
     CUSTOM_API_KEY: {
       name: 'Custom API',
       description: 'For other LLM providers',
       placeholder: 'your_custom_key',
-      order: 4
+      order: 5
     }
   }
 
