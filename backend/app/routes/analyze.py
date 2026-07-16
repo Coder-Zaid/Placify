@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-import pandas as pd
 import time
 import re
 import json
