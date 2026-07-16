@@ -252,7 +252,17 @@ const LiveInterviewStep = ({
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-[#666]">Audio Speech Engine:</span>
-                  <span className="font-semibold text-green-600">Web Speech API</span>
+                  <span className="font-semibold text-green-600">
+                    {(() => {
+                      try {
+                        const keys = JSON.parse(localStorage.getItem('placify_api_keys') || '{}')
+                        if (keys.GROQ_API_KEY) return 'Groq Whisper API'
+                        if (keys.OPENAI_API_KEY) return 'OpenAI Whisper API'
+                        if (keys.GEMINI_API_KEY) return 'Gemini Voice API'
+                      } catch (e) {}
+                      return 'Groq Whisper API'
+                    })()}
+                  </span>
                 </div>
               </div>
             </div>
