@@ -264,7 +264,7 @@ const LiveInterviewStep = ({
                         if (keys.OPENAI_API_KEY) return 'OpenAI Whisper API'
                         if (keys.GEMINI_API_KEY) return 'Gemini Voice API'
                       } catch (e) {}
-                      return 'Groq Whisper API'
+                      return 'Web Speech API'
                     })()}
                   </span>
                 </div>
