@@ -59,7 +59,8 @@ export function useSpeechRecognition() {
           } catch(e) {}
 
           try {
-            const res = await fetch('http://localhost:8000/analyze/interview-studio/transcribe', {
+            const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8000';
+            const res = await fetch(`${baseUrl}/analyze/interview-studio/transcribe`, {
               method: 'POST',
               body: formData
             })
