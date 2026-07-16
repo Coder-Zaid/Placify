@@ -675,7 +675,7 @@ export default function App() {
                 <h3 className="font-bold text-lg">Cohort analytics dashboard</h3>
               </div>
               <Suspense fallback={<div>Loading Cohort Analytics...</div>}>
-                <CohortAnalytics results={batchData?.results || []} />
+                <CohortAnalytics results={batchData?.results?.results || []} />
               </Suspense>
             </div>
           </section>
