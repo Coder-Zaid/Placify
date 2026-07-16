@@ -265,7 +265,11 @@ async def validate_key(request: KeyValidationRequest):
         elif provider == 'anthropic':
             import anthropic
             client = anthropic.Anthropic(api_key=key)
-            client.models.list()
+            client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=1,
+                messages=[{"role": "user", "content": "ping"}]
+            )
             return {"valid": True, "message": "Connection successful"}
             
     except Exception as e:

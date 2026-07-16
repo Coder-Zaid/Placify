@@ -19,9 +19,20 @@ try:
 except ImportError:
     PyPDF2 = None
 
-from google import genai
-import openai
-import anthropic
+try:
+    from google import genai
+except ImportError:
+    genai = None
+
+try:
+    import openai
+except ImportError:
+    openai = None
+
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 
 class UniversalLLMService:
