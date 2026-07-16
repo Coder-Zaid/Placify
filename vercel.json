@@ -23,7 +23,8 @@
       "dest": "backend/app/main.py"
     },
     {
-      "handle": "filesystem"
+      "src": "/(.*)\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot|mp4|webm)$",
+      "dest": "frontend/$1.$2"
     },
     {
       "src": "/(.*)",
