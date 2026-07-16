@@ -1,10 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 /**
- * Hook wrapping a custom WebAssembly / Backend-proxied STT engine.
- * Records standalone, fully-headered audio slices, stops & restarts the recorder
- * dynamically every few seconds, and appends incoming transcriptions.
- * Completely immune to container headers concatenation corruptions!
+ * Hook wrapping a custom Backend-proxied STT engine (like Groq Whisper).
+ * Records continuously in a single audio buffer, requesting data slices
+ * every few seconds to perform cumulative transcription.
+ * 
+ * This strategy preserves full sentence context for Whisper, eliminating boundary cuts
+ * and spelling inaccuracies, while maintaining real-time text updates.
  */
 export function useSpeechRecognition() {
   const [transcript, setTranscript] = useState('')
@@ -16,15 +18,17 @@ export function useSpeechRecognition() {
   const mediaRecorderRef = useRef(null)
   const isStartedRef = useRef(false)
   const streamRef = useRef(null)
-  const currentChunksRef = useRef([])
+  const cumulativeChunksRef = useRef([])
   const intervalRef = useRef(null)
-  const fullTextRef = useRef('')
+  const lastRequestTimeRef = useRef(0)
 
   const start = useCallback(async () => {
     if (isStartedRef.current) return
     isStartedRef.current = true
     setIsListening(true)
     setSpeechError(null)
+    cumulativeChunksRef.current = []
+    setTranscript('')
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -34,22 +38,17 @@ export function useSpeechRecognition() {
         ? 'audio/webm' 
         : 'audio/mp4'
 
-      const initRecorder = () => {
-        const mediaRecorder = new MediaRecorder(stream, { mimeType })
-        mediaRecorderRef.current = mediaRecorder
-        currentChunksRef.current = []
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
+      mediaRecorderRef.current = mediaRecorder
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data && event.data.size > 0) {
-            currentChunksRef.current.push(event.data)
-          }
-        }
-
-        mediaRecorder.onstop = async () => {
-          if (currentChunksRef.current.length === 0) return
-
+      mediaRecorder.ondataavailable = async (event) => {
+        if (event.data && event.data.size > 0) {
+          cumulativeChunksRef.current.push(event.data)
+          
+          // Construct cumulative blob containing all speech from the start
           const extension = mimeType.split('/')[1]?.split(';')[0] || 'webm'
-          const blob = new Blob(currentChunksRef.current, { type: mimeType })
+          const blob = new Blob(cumulativeChunksRef.current, { type: mimeType })
+          
           const formData = new FormData()
           formData.append('file', blob, `chunk.${extension}`)
           
@@ -57,7 +56,10 @@ export function useSpeechRecognition() {
             const keys = JSON.parse(localStorage.getItem('placify_api_keys') || '{}')
             const apiKey = keys.GROQ_API_KEY || keys.GEMINI_API_KEY || keys.OPENAI_API_KEY || keys.ANTHROPIC_API_KEY
             if (apiKey) formData.append('api_key', apiKey)
-          } catch(e) {}
+          } catch (e) {}
+
+          const requestTime = Date.now()
+          lastRequestTimeRef.current = requestTime
 
           try {
             const baseUrl = import.meta.env.PROD ? '' : 'http://localhost:8000';
@@ -66,32 +68,23 @@ export function useSpeechRecognition() {
               body: formData
             })
             const data = await res.json()
-            if (data.text) {
-              const cleaned = data.text.trim()
-              if (cleaned) {
-                fullTextRef.current += (fullTextRef.current ? ' ' : '') + cleaned
-                setTranscript(fullTextRef.current)
-              }
+            
+            // Check sequence order to prevent race conditions from lagging network requests
+            if (requestTime >= lastRequestTimeRef.current && data.text) {
+              setTranscript(data.text.trim())
             }
           } catch (err) {
-            console.error('[SpeechRecognition] Transcribe chunk error:', err)
+            console.error('[SpeechRecognition] Transcribe cumulative error:', err)
           }
+        }
+      }
 
-          // If still listening, start a fresh segment
-          if (isStartedRef.current) {
-            initRecorder()
-            mediaRecorderRef.current.start()
-          }
-        };
-      };
+      mediaRecorder.start()
 
-      initRecorder()
-      mediaRecorderRef.current.start()
-
-      // Stop & save recorder chunk every 4 seconds
+      // Every 4 seconds, request accumulated media data without stopping the recorder
       intervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          mediaRecorderRef.current.stop()
+          mediaRecorderRef.current.requestData()
         }
       }, 4000)
       
@@ -116,9 +109,8 @@ export function useSpeechRecognition() {
   }, [])
   
   const resetTranscript = useCallback(() => {
-    fullTextRef.current = ''
     setTranscript('')
-    currentChunksRef.current = []
+    cumulativeChunksRef.current = []
   }, [])
 
   useEffect(() => {
