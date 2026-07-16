@@ -1,13 +1,36 @@
 /* eslint-disable react/prop-types */
-import { useState, useCallback } from 'react'
-import { Upload, Loader, AlertCircle, Zap } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
+import { Upload, Loader, AlertCircle, Zap, Info } from 'lucide-react'
 import axios from 'axios'
 
 export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   // Extract state from props
   const { jdText, resumeFile, resumeBase64, isLoading, error, results } = data
+
+  useEffect(() => {
+    if (!isLoading) {
+      setProgress(0)
+      return
+    }
+
+    setProgress(5)
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(interval)
+          return 95
+        }
+        const diff = 95 - prev
+        const increment = Math.max(1, Math.round(diff * 0.15))
+        return prev + increment
+      })
+    }, 400)
+
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   const handleResumUpload = useCallback((e) => {
     const file = e.target.files[0]
@@ -201,6 +224,36 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
             Fast Offline Run
           </button>
         </div>
+
+        {isLoading && (
+          <div className="p-6 border border-[#0F0F11]/10 rounded-[14px] bg-white space-y-4 mt-6">
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-[#0F0F11] mt-0.5 flex-shrink-0 stroke-[1.5]" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-[#0F0F11]">Analyzing Resume PDF</p>
+                <p className="text-sm text-[#6F6F75]">
+                  Evaluating candidate profile across skill relevance, academic performance, and growth metrics.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between p-4 bg-[#FAFAF8] rounded-[10px] border border-[#0F0F11]/5">
+              <div className="flex items-center gap-3">
+                <Loader className="h-5 w-5 animate-spin text-[#6F6F75] stroke-[1.5]" />
+                <div>
+                  <p className="text-xs font-mono text-[#A8A8AE] uppercase tracking-wider">Analysis Progress</p>
+                  <p className="text-lg font-mono font-medium text-[#0F0F11]">{progress}%</p>
+                </div>
+              </div>
+              <div className="w-40 h-2 bg-[#0F0F11]/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#0F0F11] transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results Section */}
