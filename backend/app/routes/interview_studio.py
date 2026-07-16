@@ -201,13 +201,20 @@ async def transcribe_audio(
         if not api_key:
             return {"text": ""}
             
+        api_key = api_key.strip().replace('"', '').replace("'", "")
         audio_bytes = await file.read()
+        file_name = file.filename or "chunk.webm"
+        mime_type = file.content_type or "audio/webm"
         
-        # Check if it is a Groq key (use Whisper-large-v3)
+        # Check if it is a Groq key (use Whisper-large-v3-turbo)
         if api_key.startswith("gsk_"):
             import openai
+            import io
             client = openai.OpenAI(api_key=api_key, base_url="https://api.groq.com/openai/v1")
-            file_obj = ("audio.webm", audio_bytes, "audio/webm")
+            
+            file_obj = io.BytesIO(audio_bytes)
+            file_obj.name = file_name
+            
             transcription = client.audio.transcriptions.create(
                 file=file_obj,
                 model="whisper-large-v3-turbo",
@@ -219,8 +226,12 @@ async def transcribe_audio(
         # Check if it is OpenAI key
         elif api_key.startswith("sk-") and not api_key.startswith("sk-ant"):
             import openai
+            import io
             client = openai.OpenAI(api_key=api_key)
-            file_obj = ("audio.webm", audio_bytes, "audio/webm")
+            
+            file_obj = io.BytesIO(audio_bytes)
+            file_obj.name = file_name
+            
             transcription = client.audio.transcriptions.create(
                 file=file_obj,
                 model="whisper-1",
@@ -237,7 +248,7 @@ async def transcribe_audio(
             response = client.models.generate_content(
                 model='gemini-1.5-flash',
                 contents=[
-                    types.Part.from_bytes(data=audio_bytes, mime_type='audio/webm'),
+                    types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                     "Transcribe this short audio clip exactly as spoken in English. Return only the transcription text, nothing else, no quotes."
                 ]
             )

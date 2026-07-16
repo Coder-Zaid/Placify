@@ -48,13 +48,14 @@ export function useSpeechRecognition() {
         mediaRecorder.onstop = async () => {
           if (currentChunksRef.current.length === 0) return
 
+          const extension = mimeType.split('/')[1]?.split(';')[0] || 'webm'
           const blob = new Blob(currentChunksRef.current, { type: mimeType })
           const formData = new FormData()
-          formData.append('file', blob, 'chunk.webm')
+          formData.append('file', blob, `chunk.${extension}`)
           
           try {
             const keys = JSON.parse(localStorage.getItem('placify_api_keys') || '{}')
-            const apiKey = keys.GROQ_API_KEY || keys.GEMINI_API_KEY || keys.OPENAI_API_KEY
+            const apiKey = keys.GROQ_API_KEY || keys.GEMINI_API_KEY || keys.OPENAI_API_KEY || keys.ANTHROPIC_API_KEY
             if (apiKey) formData.append('api_key', apiKey)
           } catch(e) {}
 
