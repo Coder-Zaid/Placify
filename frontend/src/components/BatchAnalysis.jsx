@@ -142,7 +142,7 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
 
     const lines = csvText.split('\n').filter(line => line.trim())
     const rowCount = Math.max(0, lines.length - 1)
-    const estimatedSeconds = rowCount * 5
+    const estimatedSeconds = rowCount * 3
     
     setTotalTime(estimatedSeconds)
     setTimeLeft(estimatedSeconds)
