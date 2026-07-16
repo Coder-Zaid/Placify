@@ -8,8 +8,12 @@ load_dotenv()
 
 # Import database configuration
 from .database import engine, Base
-# Bind metadata and create tables on startup
-Base.metadata.create_all(bind=engine)
+# Bind metadata and create tables on startup (safely wrapped for serverless/sqlite compatibility)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as db_err:
+    import logging
+    logging.getLogger("uvicorn.error").warning(f"Database initialization failed/skipped: {db_err}")
 
 # Import routes
 from .routes import analyze, auth_routes, interview_studio
