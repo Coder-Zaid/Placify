@@ -40,7 +40,7 @@ const InterviewStudio = () => {
   // Hooks
   const { videoRef, audioStream, startMedia, stopMedia, streamRef } = useMediaStream()
   const { transcript, interimTranscript, isListening, start: speechStart, stop: speechStop, reset: speechReset, speechError } = useSpeechRecognition()
-  const { volume, isSpeaking, frequencyData, stats, updateStats, micGain, setMicGain, pitch, pitchLabel } = useAudioAnalysis(audioStream)
+  const { volume, isSpeaking, frequencyData, stats, updateStats } = useAudioAnalysis(audioStream)
   const { eyeContactScore, faceDetected, startTracking, stopTracking } = useFaceTracking(videoRef)
 
   // Update speech stats when transcript changes
@@ -309,10 +309,6 @@ const InterviewStudio = () => {
             isMuted={isMuted}
             setIsMuted={setIsMuted}
             speechError={speechError}
-            micGain={micGain}
-            setMicGain={setMicGain}
-            pitch={pitch}
-            pitchLabel={pitchLabel}
           />
         )}
         {step === 'analysis' && (
