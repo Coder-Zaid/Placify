@@ -133,27 +133,27 @@ const SetupStep = ({ config, setConfig, onNext }) => {
             <label className="block text-xs font-semibold text-[#666] uppercase tracking-wider">
               Resume Upload * <span className="text-[#CCC]">(compulsory PDF)</span>
             </label>
-            <div
-              className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
+            <input
+              id="resume-input"
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={(e) => handleResumeUpload(e.target.files[0])}
+            />
+            <label
+              htmlFor="resume-input"
+              className={`relative block border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
                 dragOver ? 'border-[#2563EB] bg-[#2563EB]/5' : config.resumeFile ? 'border-green-300 bg-green-50/50' : 'border-black/10 hover:border-black/20'
               }`}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
               onDrop={(e) => { e.preventDefault(); setDragOver(false); handleResumeUpload(e.dataTransfer.files[0]) }}
-              onClick={() => document.getElementById('resume-input').click()}
             >
-              <input
-                id="resume-input"
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => handleResumeUpload(e.target.files[0])}
-              />
               <Upload className={`w-6 h-6 mx-auto mb-2 ${config.resumeFile ? 'text-green-500' : 'text-[#CCC]'}`} />
               <p className="text-sm text-[#666]">
                 {config.resumeFile ? config.resumeFile.name : 'Drop your resume here or click to browse'}
               </p>
-            </div>
+            </label>
           </motion.div>
         </div>
 
