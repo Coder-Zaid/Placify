@@ -326,6 +326,17 @@ export default function App() {
   const { toasts, addToast, removeToast } = useToast()
   
   const [resumeData, setResumeData] = useState({ jdText: '', resumeFile: null, resumeBase64: '', results: null, isLoading: false, error: '' })
+  const [batchData, setBatchData] = useState({ jdText: '', csvFile: null, csvText: '', results: null, isLoading: false, error: '' })
+
+  const getApiKey = () => {
+    try {
+      const storedKeys = JSON.parse(localStorage.getItem('placify_api_keys') || '{}')
+      return storedKeys.GEMINI_API_KEY || storedKeys.OPENAI_API_KEY || storedKeys.GROQ_API_KEY || storedKeys.ANTHROPIC_API_KEY || ''
+    } catch (e) {
+      return ''
+    }
+  }
+  const currentApiKey = getApiKey()
 
   const { scrollYProgress } = useScroll({
     target: mainRef,
@@ -690,9 +701,19 @@ export default function App() {
 
               <Suspense fallback={<div>Loading Module...</div>}>
                 {resumeMode === 'single' ? (
-                  <ResumeAnalyzer apiKey="" data={resumeData} updateData={setResumeData} addToast={addToast} />
+                  <ResumeAnalyzer 
+                    apiKey={currentApiKey} 
+                    data={resumeData} 
+                    updateData={(newData) => setResumeData(prev => ({ ...prev, ...newData }))} 
+                    addToast={addToast} 
+                  />
                 ) : (
-                  <BatchAnalysis addToast={addToast} />
+                  <BatchAnalysis 
+                    apiKey={currentApiKey} 
+                    data={batchData} 
+                    updateData={(newData) => setBatchData(prev => ({ ...prev, ...newData }))} 
+                    addToast={addToast} 
+                  />
                 )}
               </Suspense>
             </div>
