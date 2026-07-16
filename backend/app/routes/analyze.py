@@ -6,6 +6,7 @@ import asyncio
 import base64
 import io
 from io import StringIO
+import pandas as pd
 try:
     import PyPDF2
 except ImportError:
