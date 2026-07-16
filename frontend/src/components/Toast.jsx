@@ -3,7 +3,7 @@ import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
 
 export default function Toast({ toasts, onRemove }) {
   return (
-    <div className="fixed top-6 right-6 z-50 space-y-4">
+    <div className="fixed top-24 right-6 z-[9999] space-y-4">
       {toasts.map((toast) => (
         <div
           key={toast.id}

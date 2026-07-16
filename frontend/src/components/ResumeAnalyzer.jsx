@@ -147,7 +147,7 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">Resume PDF</label>
-            <div className="border border-[#0F0F11]/10 rounded-[14px] bg-[#FAFAF8] p-10 text-center hover:border-[#0F0F11] transition cursor-pointer flex flex-col items-center justify-center h-52">
+            <label htmlFor="resume-input" className="border border-[#0F0F11]/10 rounded-[14px] bg-[#FAFAF8] p-10 text-center hover:border-[#0F0F11] transition cursor-pointer flex flex-col items-center justify-center h-52">
               <input
                 type="file"
                 accept=".pdf"
@@ -155,14 +155,14 @@ export default function ResumeAnalyzer({ apiKey, data, updateData, addToast }) {
                 className="hidden"
                 id="resume-input"
               />
-              <label htmlFor="resume-input" className="cursor-pointer space-y-3">
+              <div className="space-y-3">
                 <Upload className="mx-auto h-6 w-6 text-[#6F6F75] stroke-[1.5]" />
                 <div>
                   <p className="text-sm font-medium text-[#0F0F11]">Upload candidate PDF</p>
                   <p className="text-xs text-[#A8A8AE] mt-1">Only PDF format accepted</p>
                 </div>
-              </label>
-            </div>
+              </div>
+            </label>
             {resumeFile && (
               <p className="text-xs font-mono text-[#6F6F75] mt-2 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-[#0F0F11] rounded-full inline-block"></span>

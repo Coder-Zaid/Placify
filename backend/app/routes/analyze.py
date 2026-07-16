@@ -695,7 +695,32 @@ async def analyze_batch(request: BatchAnalysisRequest):
         # Parse CSV
         csv_file = StringIO(request.csv_data)
         students_df = pd.read_csv(csv_file)
-        print(f"[BATCH] CSV parsed: {len(students_df)} students")
+        
+        # Normalize columns to prevent KeyError / crashes
+        column_mapping = {}
+        for col in students_df.columns:
+            clean_col = str(col).strip().lower().replace(' ', '_').replace('__', '_')
+            if clean_col in ['name', 'student_name', 'candidate_name']:
+                column_mapping[col] = 'Name'
+            elif clean_col in ['roll', 'roll_no', 'roll_number', 'rollno']:
+                column_mapping[col] = 'Roll_Number'
+            elif clean_col in ['cgpa', 'gpa']:
+                column_mapping[col] = 'CGPA'
+            elif clean_col in ['skills', 'technical_skills', 'tech_skills', 'skill_set']:
+                column_mapping[col] = 'Technical_Skills'
+            elif clean_col in ['backlogs', 'active_backlogs', 'backlog']:
+                column_mapping[col] = 'Active_Backlogs'
+            elif clean_col in ['portfolio', 'has_portfolio']:
+                column_mapping[col] = 'Has_Portfolio'
+            elif clean_col in ['aptitude', 'aptitude_score', 'apt_score']:
+                column_mapping[col] = 'Aptitude_Score'
+        
+        students_df = students_df.rename(columns=column_mapping)
+        for expected_col in ['Name', 'Roll_Number', 'CGPA', 'Technical_Skills', 'Active_Backlogs', 'Has_Portfolio', 'Aptitude_Score']:
+            if expected_col not in students_df.columns:
+                students_df[expected_col] = ''
+                
+        print(f"[BATCH] CSV parsed and normalized: {len(students_df)} students")
         
         # Phase 0: JD Intelligence
         print(f"[BATCH] Phase 0: Extracting JD intelligence...")
@@ -1435,7 +1460,32 @@ async def analyze_batch_offline(request: BatchAnalysisRequest):
         # Parse CSV
         try:
             csv_df = pd.read_csv(StringIO(request.csv_data))
-            print(f"[BATCH-OFFLINE] CSV parsed successfully: {len(csv_df)} students")
+            
+            # Normalize columns to prevent KeyError / crashes
+            column_mapping = {}
+            for col in csv_df.columns:
+                clean_col = str(col).strip().lower().replace(' ', '_').replace('__', '_')
+                if clean_col in ['name', 'student_name', 'candidate_name']:
+                    column_mapping[col] = 'Name'
+                elif clean_col in ['roll', 'roll_no', 'roll_number', 'rollno']:
+                    column_mapping[col] = 'Roll_Number'
+                elif clean_col in ['cgpa', 'gpa']:
+                    column_mapping[col] = 'CGPA'
+                elif clean_col in ['skills', 'technical_skills', 'tech_skills', 'skill_set']:
+                    column_mapping[col] = 'Technical_Skills'
+                elif clean_col in ['backlogs', 'active_backlogs', 'backlog']:
+                    column_mapping[col] = 'Active_Backlogs'
+                elif clean_col in ['portfolio', 'has_portfolio']:
+                    column_mapping[col] = 'Has_Portfolio'
+                elif clean_col in ['aptitude', 'aptitude_score', 'apt_score']:
+                    column_mapping[col] = 'Aptitude_Score'
+            
+            csv_df = csv_df.rename(columns=column_mapping)
+            for expected_col in ['Name', 'Roll_Number', 'CGPA', 'Technical_Skills', 'Active_Backlogs', 'Has_Portfolio', 'Aptitude_Score']:
+                if expected_col not in csv_df.columns:
+                    csv_df[expected_col] = ''
+            
+            print(f"[BATCH-OFFLINE] CSV parsed and normalized: {len(csv_df)} students")
             print(f"[BATCH-OFFLINE] CSV columns: {list(csv_df.columns)}")
         except Exception as csv_error:
             print(f"[BATCH-OFFLINE] CSV parsing error: {str(csv_error)}")
