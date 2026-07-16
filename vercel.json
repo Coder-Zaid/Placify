@@ -19,6 +19,10 @@
       "dest": "backend/app/main.py"
     },
     {
+      "src": "/auth/(.*)",
+      "dest": "backend/app/main.py"
+    },
+    {
       "src": "/health",
       "dest": "backend/app/main.py"
     },
