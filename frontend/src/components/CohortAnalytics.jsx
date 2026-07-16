@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { TrendingUp, Layers, CheckCircle2, User } from 'lucide-react'
+import { TrendingUp, Layers, CheckCircle2, User, AlertCircle } from 'lucide-react'
 
 export default function CohortAnalytics({ results = [] }) {
   if (!results || results.length === 0) {
