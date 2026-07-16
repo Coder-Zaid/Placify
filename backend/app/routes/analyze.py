@@ -783,12 +783,6 @@ async def analyze_batch(request: BatchAnalysisRequest):
                         growth_reasoning=""
                     )
                     results.append(result)
-                    
-                    # MANDATORY 8-SECOND THROTTLE after each student
-                    # Free-tier Gemini: 15 RPM = 1 request per 4 seconds
-                    # 8s throttle ensures we never burst above limit with safety margin
-                    print(f"[BATCH] ⏱ Throttling 8s (RPM quota protection: 15 RPM = 1 req per 4s)...")
-                    await asyncio.sleep(8)
                     continue
                 
                 # Phase 2: 6-Pillar Scoring
@@ -939,11 +933,11 @@ async def analyze_batch(request: BatchAnalysisRequest):
                 )
                 results.append(failed_result)
             
-            # MANDATORY 8-SECOND THROTTLE after EVERY single student
+            # MANDATORY 4-SECOND THROTTLE after EVERY single student
             # Free-tier Gemini: 15 RPM = 1 request per 4 seconds
-            # 8s throttle ensures we never burst above limit with safety margin
-            print(f"[BATCH] ⏱ Throttling 8s (RPM quota protection: 15 RPM = 1 req per 4s)...")
-            await asyncio.sleep(8)
+            # 4s throttle ensures we comply with the limits
+            print(f"[BATCH] ⏱ Throttling 4s (RPM quota protection: 15 RPM = 1 req per 4s)...")
+            await asyncio.sleep(4)
         
         print(f"[BATCH] ✓ Analysis complete: {len(results)} students processed")
         

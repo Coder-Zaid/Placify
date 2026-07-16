@@ -1,0 +1,11 @@
+Name,Roll_Number,CGPA,Technical_Skills,Active_Backlogs,Has_Portfolio,Aptitude_Score
+Amit Sharma,2023CS01,8.5,"python, sql, git, docker, aws, django",0,True,85
+Priya Patel,2023CS02,9.2,"react, javascript, html, css, git, node.js",0,True,78
+Rohan Das,2023CS03,6.2,"java, c++, sql",0,False,65
+Sneha Reddy,2023CS04,7.8,"python, machine learning, pandas, numpy, git, aws",0,True,90
+Vikram Malhotra,2023CS05,8.1,"c#, unity, javascript, html",1,True,72
+Ananya Sen,2023CS06,5.4,"python, sql",0,False,50
+Karan Singh,2023CS07,7.5,"java, spring, git, postgresql, aws",0,True,82
+Meera Nair,2023CS08,8.9,"javascript, typescript, react, node.js, git, mongodb",0,True,95
+Aditya Verma,2023CS09,7.9,"java, c++, sql, git, spring boot",0,True,75
+Ritu Joshi,2023CS10,8.3,"python, django, javascript, react, git, sql",0,True,88

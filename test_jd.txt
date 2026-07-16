@@ -1,0 +1,24 @@
+Position: Associate Software Engineer
+Location: Remote / Bangalore, India
+Company: CloudSync Solutions
+
+About Us:
+CloudSync is a next-generation SaaS startup building scalable cloud automation tools. We are looking for entry-level Software Engineers to join our core development team.
+
+Required Qualifications:
+- Bachelor's degree (B.Tech / B.E / BCA / MCA / B.Sc CS)
+- Minimum CGPA of 7.5 or above (Strict requirement)
+- Zero active backlogs
+
+Core Skills Required:
+- Proficiency in Python, JavaScript, SQL, or Java
+- Experience with Git version control is a must
+- Exposure to cloud technologies (AWS/Azure/GCP) or container tools (Docker/Kubernetes) is a strong plus
+- Basic understanding of Agile methodologies and SDLC concepts
+- Good analytical and logical reasoning skills
+
+Responsibilities:
+- Write clean, maintainable code for our cloud integrations
+- Collaborate in sprint planning, code reviews, and unit testing using Jest/unittest
+- Build responsive UI features or backend APIs as needed
+- Document development workflows in Jira
