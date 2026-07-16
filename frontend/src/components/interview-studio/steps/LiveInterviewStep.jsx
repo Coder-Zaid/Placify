@@ -24,7 +24,11 @@ const LiveInterviewStep = ({
   isMuted,
   setIsMuted,
   startTime,
-  speechError
+  speechError,
+  micGain = 1.5,
+  setMicGain,
+  pitch = 0,
+  pitchLabel = 'Silent'
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [timer, setTimer] = useState(0)
@@ -242,15 +246,15 @@ const LiveInterviewStep = ({
           </div>
 
           {/* Session Status / Tips */}
-          <div className="flex-1 bg-white rounded-2xl border border-black/5 p-5 flex flex-col justify-between">
+          <div className="flex-1 bg-white rounded-2xl border border-black/5 p-5 flex flex-col justify-between space-y-4">
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-[#999] mb-2">Session Info</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
+              <h4 className="text-xs font-mono uppercase tracking-wider text-[#999] mb-3">Session Info</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between text-xs border-b border-black/[0.03] pb-2">
                   <span className="text-[#666]">Eye Contact Tracker:</span>
                   <span className="font-semibold text-[#111]">{faceDetected ? 'Active' : 'Searching...'}</span>
                 </div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-xs border-b border-black/[0.03] pb-2">
                   <span className="text-[#666]">Audio Speech Engine:</span>
                   <span className="font-semibold text-green-600">
                     {(() => {
@@ -263,6 +267,41 @@ const LiveInterviewStep = ({
                       return 'Groq Whisper API'
                     })()}
                   </span>
+                </div>
+                
+                {/* Voice Pitch Tracker */}
+                <div className="flex flex-col gap-1 text-xs border-b border-black/[0.03] pb-2">
+                  <div className="flex justify-between">
+                    <span className="text-[#666]">Voice Pitch Tracker:</span>
+                    <span className={`font-semibold ${
+                      pitchLabel.includes('Ideal') ? 'text-green-600' : pitchLabel.includes('Silent') ? 'text-[#999]' : 'text-amber-600'
+                    }`}>
+                      {pitch > 0 ? `${pitch} Hz` : 'Silent'}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-[#999] font-mono text-right">
+                    {pitchLabel}
+                  </div>
+                </div>
+
+                {/* Mic Gain Boost Level slider */}
+                <div className="flex flex-col gap-1.5 text-xs pt-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#666]">Mic Level Boost:</span>
+                    <span className="font-semibold text-blue-600 font-mono">{micGain.toFixed(1)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1.0"
+                    max="3.0"
+                    step="0.1"
+                    value={micGain}
+                    onChange={(e) => setMicGain && setMicGain(parseFloat(e.target.value))}
+                    className="w-full h-1 bg-black/10 rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+                  />
+                  <div className="text-[9px] text-[#AAA] leading-normal font-mono">
+                    Raise multiplier if your mic is too quiet
+                  </div>
                 </div>
               </div>
             </div>
