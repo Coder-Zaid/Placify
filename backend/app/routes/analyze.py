@@ -1837,22 +1837,129 @@ async def analyze_resume_offline(request: ResumeAnalysisRequest):
 @router.post("/interview/evaluate", response_model=InterviewResponse)
 async def evaluate_mock_response(request: InterviewRequest):
     """
-    Fast offline evaluation of mock interview answer.
-    Computes semantic similarity to question concepts and extracts sentiment.
+    Evaluate mock interview answer.
+    Uses AI if an API key is available, falling back to smart heuristics otherwise.
     """
     try:
-        content_score = calculate_cosine_similarity(request.answer, request.question)
-        # Boost base score since comparison is to query rather than full key-answer guidelines
-        content_score = min(100.0, content_score * 3.5 + 25.0)
+        api_key_clean = (request.api_key or "").strip()
+        use_ai = False
+        working_model = None
         
-        sentiment_score, tone = analyze_sentiment_valence(request.answer)
+        if api_key_clean:
+            use_ai = True
+            if api_key_clean.startswith('AIza'):
+                working_model = "gemini-1.5-flash"
+            elif api_key_clean.startswith('gsk_'):
+                working_model = "llama-3.3-70b-versatile"
+            elif api_key_clean.startswith('sk-ant'):
+                working_model = "claude-3-5-sonnet-20241022"
+            else:
+                working_model = "gpt-4o-mini"
+        else:
+            # Fallback to env keys if present
+            env_key = os.getenv("GEMINI_API_KEY") or os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+            if env_key:
+                api_key_clean = env_key.strip()
+                use_ai = True
+                if api_key_clean.startswith('AIza'):
+                    working_model = "gemini-1.5-flash"
+                elif api_key_clean.startswith('gsk_'):
+                    working_model = "llama-3.3-70b-versatile"
+                elif api_key_clean.startswith('sk-ant'):
+                    working_model = "claude-3-5-sonnet-20241022"
+                else:
+                    working_model = "gpt-4o-mini"
+
+        if use_ai:
+            try:
+                llm = UniversalLLMService(
+                    api_keys={
+                        "GEMINI_API_KEY": api_key_clean,
+                        "OPENAI_API_KEY": api_key_clean,
+                        "ANTHROPIC_API_KEY": api_key_clean,
+                        "GROQ_API_KEY": api_key_clean
+                    },
+                    working_model=working_model
+                )
+                
+                eval_prompt = f"""You are an expert technical interviewer evaluating a candidate's response.
+                
+Question: {request.question}
+Candidate Answer: {request.answer}
+
+Evaluate the candidate's answer for technical accuracy, completeness, and clarity.
+If the answer is a tautology, extremely brief, nonsensical, or dodges the question (e.g. "list is list" or "tuple is tuple"), it must receive a very low score (0 to 15).
+
+Return ONLY valid JSON using this schema:
+{{
+  "score": <float from 0.0 to 100.0>,
+  "sentiment": <float from 0.0 to 100.0>,
+  "tone": "1-3 words describing tone (e.g. Technical & Confident, Hesitant, Brief, Professional)",
+  "feedback": "2 sentence clear constructive feedback directly to the candidate"
+}}
+"""
+                raw_response = await llm.generate_content_with_fallback(eval_prompt)
+                
+                # Parse JSON
+                start = raw_response.find('{')
+                end = raw_response.rfind('}') + 1
+                if start >= 0 and end > start:
+                    data = json.loads(raw_response[start:end])
+                    content_score = float(data.get('score', 0))
+                    sentiment_score = float(data.get('sentiment', 50))
+                    tone = str(data.get('tone', 'Professional'))
+                    feedback = str(data.get('feedback', 'Answer processed.'))
+                    
+                    return InterviewResponse(
+                        content_score=round(content_score, 1),
+                        sentiment_score=sentiment_score,
+                        tone=tone,
+                        feedback=feedback
+                    )
+            except Exception as ai_err:
+                print(f"[INTERVIEW] AI Evaluation failed: {ai_err}. Falling back to smart heuristics.")
+
+        # Smart heuristic fallback
+        ans_clean = request.answer.strip()
+        word_count = len(ans_clean.split())
         
-        feedback = (
-            f"The candidate response shows a {tone.lower()} expression. "
-            f"Evaluations scored {content_score:.1f}% semantic keyword alignment against prompt directives. "
-            "Suggest refining specifications with structured technical definitions to boost impact."
-        )
+        # Calculate base cosine similarity
+        cosine_sim = calculate_cosine_similarity(ans_clean, request.question)
         
+        # Detect cheap answers or tautologies (e.g. "X is X", "X is X and Y is Y")
+        is_tautology = False
+        words = [w.lower() for w in ans_clean.split() if w.isalnum()]
+        if len(words) > 0:
+            unique_words = set(words)
+            # If candidate repeats very few words or repeats patterns
+            if len(unique_words) <= 3 and len(words) > 2:
+                is_tautology = True
+            # Check for direct word equivalence (e.g. "list is list")
+            for i in range(len(words) - 2):
+                if words[i] == words[i+2] and words[i+1] in ['is', 'are', 'was', 'were', 'equals', 'equal']:
+                    is_tautology = True
+                    
+        # Apply score calculations
+        if is_tautology or word_count < 4:
+            content_score = 5.0
+            feedback = "Tautology or extremely brief response detected. Please provide a meaningful explanation of the technical concept."
+            tone = "Evasive"
+            sentiment_score = 10.0
+        elif word_count < 10:
+            content_score = min(40.0, cosine_sim * 2.0 + 15.0)
+            feedback = f"Response is too brief ({word_count} words). Elaborate more on the differences and provide technical details."
+            tone = "Brief & Incomplete"
+            sentiment_score, tone_extracted = analyze_sentiment_valence(ans_clean)
+        else:
+            # Standard heuristic boost
+            content_score = min(100.0, cosine_sim * 3.5 + 25.0)
+            sentiment_score, tone = analyze_sentiment_valence(ans_clean)
+            feedback = (
+                f"The candidate response shows a {tone.lower()} expression. "
+                f"Evaluations scored {content_score:.1f}% semantic keyword alignment against prompt directives. "
+                "Suggest refining specifications with structured technical definitions to boost impact."
+            )
+            
         return InterviewResponse(
             content_score=round(content_score, 1),
             sentiment_score=sentiment_score,

@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { CheckCircle2, MessageSquare, Loader, ArrowRight } from 'lucide-react'
 import axios from 'axios'
 
-export default function InterviewModule({ addToast }) {
+export default function InterviewModule({ apiKey, addToast }) {
   const [response, setResponse] = useState('')
   const [question, setQuestion] = useState('Explain the difference between a list and a tuple in Python.')
   const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +22,8 @@ export default function InterviewModule({ addToast }) {
     try {
       const res = await axios.post('/analyze/interview/evaluate', {
         question,
-        answer: response
+        answer: response,
+        api_key: apiKey
       })
       setResult(res.data)
       addToast('Answer evaluated successfully.', {

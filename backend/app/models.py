@@ -97,6 +97,7 @@ class UserLogin(BaseModel):
 class InterviewRequest(BaseModel):
     question: str
     answer: str
+    api_key: Optional[str] = None
 
 class InterviewResponse(BaseModel):
     content_score: float

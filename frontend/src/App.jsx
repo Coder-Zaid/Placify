@@ -744,7 +744,7 @@ export default function App() {
               className="md:col-span-8 bg-white rounded-2xl shadow-2xl border border-black/5 p-6 min-h-[400px]"
             >
               <Suspense fallback={<div>Loading Practice...</div>}>
-                <InterviewModule addToast={addToast} />
+                <InterviewModule apiKey={currentApiKey} addToast={addToast} />
               </Suspense>
             </motion.div>
           </section>
