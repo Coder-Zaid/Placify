@@ -933,10 +933,13 @@ async def analyze_batch(request: BatchAnalysisRequest):
                 )
                 results.append(failed_result)
             
-            # MANDATORY 2-SECOND THROTTLE after EVERY single student
-            # Complying with 15 RPM by adding a 2s throttle
-            print(f"[BATCH] ⏱ Throttling 2s (RPM quota protection)...")
-            await asyncio.sleep(2)
+            # Only throttle for Gemini free-tier keys (starts with AIza)
+            if api_key_clean.startswith('AIza'):
+                print(f"[BATCH] ⏱ Throttling 2s (Gemini RPM quota protection)...")
+                await asyncio.sleep(2)
+            else:
+                # Tiny 0.1s delay to prevent flooding
+                await asyncio.sleep(0.1)
         
         print(f"[BATCH] ✓ Analysis complete: {len(results)} students processed")
         

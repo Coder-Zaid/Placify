@@ -142,7 +142,10 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
 
     const lines = csvText.split('\n').filter(line => line.trim())
     const rowCount = Math.max(0, lines.length - 1)
-    const estimatedSeconds = rowCount * 3
+    
+    // Groq/OpenAI/Anthropic have higher rate limits than free Gemini keys (which start with 'AIza')
+    const isGemini = apiKey.startsWith('AIza')
+    const estimatedSeconds = isGemini ? rowCount * 3 : Math.max(3, Math.round(rowCount * 0.6))
     
     setTotalTime(estimatedSeconds)
     setTimeLeft(estimatedSeconds)
