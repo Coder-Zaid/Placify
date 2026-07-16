@@ -733,10 +733,9 @@ export default function App() {
               <p className="text-[#555555] text-lg">Practice until confidence becomes natural.</p>
               <Link
                 to="/interview-studio"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] text-white rounded-xl font-semibold text-sm hover:bg-[#1D4ED8] transition-colors shadow-lg hover:shadow-xl mt-2"
+                className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#111] text-white rounded-2xl font-semibold text-sm hover:bg-[#222] transition-all shadow-md hover:shadow-lg hover:translate-y-[-1px] mt-2 active:translate-y-[0px]"
               >
-                <Sparkles className="w-4 h-4" />
-                Launch AI Interview Studio
+                Launch Interview Studio
               </Link>
             </div>
             <motion.div 

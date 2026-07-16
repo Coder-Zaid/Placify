@@ -1,14 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 /**
- * Hook wrapping a custom WebAssembly / Backend-proxied STT engine.
- * Records standalone, fully-headered audio slices, stops & restarts the recorder
- * dynamically every few seconds, and appends incoming transcriptions.
- * Completely immune to container headers concatenation corruptions!
+ * Hook wrapping a custom WebAssembly / Backend-proxied STT engine (Whisper via Groq)
+ * with a dynamic fallback to the browser's native Web Speech API if no API keys are entered.
  */
 export function useSpeechRecognition() {
   const [transcript, setTranscript] = useState('')
-  const [interimTranscript] = useState('')
+  const [interimTranscript, setInterimTranscript] = useState('')
   const [isListening, setIsListening] = useState(false)
   const [isSupported] = useState(true)
   const [speechError, setSpeechError] = useState(null)
@@ -19,6 +17,9 @@ export function useSpeechRecognition() {
   const currentChunksRef = useRef([])
   const intervalRef = useRef(null)
   const fullTextRef = useRef('')
+  
+  // Native fallback recognition reference
+  const nativeRecognitionRef = useRef(null)
 
   const start = useCallback(async () => {
     if (isStartedRef.current) return
@@ -26,6 +27,65 @@ export function useSpeechRecognition() {
     setIsListening(true)
     setSpeechError(null)
 
+    // Check if an API key is available in LocalStorage
+    let hasApiKey = false
+    try {
+      const keys = JSON.parse(localStorage.getItem('placify_api_keys') || '{}')
+      hasApiKey = !!(keys.GROQ_API_KEY || keys.GEMINI_API_KEY || keys.OPENAI_API_KEY || keys.ANTHROPIC_API_KEY)
+    } catch(e) {}
+
+    // OPTION A: If no key is found, fall back to Browser's free native Web Speech API
+    if (!hasApiKey) {
+      console.log("[SpeechRecognition] No API key detected. Using native Web Speech API...");
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      if (SpeechRecognition) {
+        try {
+          const rec = new SpeechRecognition()
+          rec.continuous = true
+          rec.interimResults = true
+          rec.lang = 'en-US'
+
+          rec.onresult = (event) => {
+            let interim = ''
+            let final = ''
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                final += event.results[i][0].transcript
+              } else {
+                interim += event.results[i][0].transcript
+              }
+            }
+            if (final) {
+              fullTextRef.current += (fullTextRef.current ? ' ' : '') + final
+              setTranscript(fullTextRef.current)
+            }
+            setInterimTranscript(interim)
+          }
+
+          rec.onerror = (e) => {
+            if (e.error === 'no-speech') return
+            console.error('[SpeechRecognition] Native Web Speech error:', e.error)
+          }
+
+          rec.onend = () => {
+            if (isStartedRef.current && nativeRecognitionRef.current) {
+              try {
+                nativeRecognitionRef.current.start()
+              } catch (err) {}
+            }
+          }
+
+          nativeRecognitionRef.current = rec
+          rec.start()
+          return
+        } catch (nativeErr) {
+          console.error('[SpeechRecognition] Native start error, trying mic recorder:', nativeErr)
+        }
+      }
+    }
+
+    // OPTION B: Use high-accuracy backend Groq/OpenAI Whisper
+    console.log("[SpeechRecognition] API key active. Recording chunk streams for Whisper STT...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
@@ -106,24 +166,43 @@ export function useSpeechRecognition() {
   const stop = useCallback(() => {
     isStartedRef.current = false
     setIsListening(false)
+    
+    // Stop native recognition if active
+    if (nativeRecognitionRef.current) {
+      try {
+        nativeRecognitionRef.current.stop()
+      } catch (e) {}
+      nativeRecognitionRef.current = null
+    }
+
     if (intervalRef.current) clearInterval(intervalRef.current)
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop()
+      try {
+        mediaRecorderRef.current.stop()
+      } catch(e) {}
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop())
+      try {
+        streamRef.current.getTracks().forEach(t => t.stop())
+      } catch(e) {}
     }
   }, [])
   
   const resetTranscript = useCallback(() => {
     fullTextRef.current = ''
     setTranscript('')
+    setInterimTranscript('')
     currentChunksRef.current = []
   }, [])
 
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
+      if (nativeRecognitionRef.current) {
+        try {
+          nativeRecognitionRef.current.stop()
+        } catch(e) {}
+      }
     }
   }, [])
   

@@ -1,15 +1,15 @@
 /* eslint-disable react/prop-types */
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Briefcase, Upload, ChevronRight, Sparkles } from 'lucide-react'
+import { Briefcase, Upload, ChevronRight, Sparkles, Sprout, Leaf, TreePine, Star, Trophy, Crown } from 'lucide-react'
 
 const EXPERIENCE_LEVELS = [
-  { label: 'Entry Level', desc: '0-1 years', icon: '🌱' },
-  { label: 'Junior', desc: '1-3 years', icon: '🌿' },
-  { label: 'Mid Level', desc: '3-5 years', icon: '🌳' },
-  { label: 'Senior', desc: '5-8 years', icon: '⭐' },
-  { label: 'Lead', desc: '8-12 years', icon: '🏆' },
-  { label: 'Executive', desc: '12+ years', icon: '👑' }
+  { label: 'Entry Level', desc: '0-1 years', icon: Sprout },
+  { label: 'Junior', desc: '1-3 years', icon: Leaf },
+  { label: 'Mid Level', desc: '3-5 years', icon: TreePine },
+  { label: 'Senior', desc: '5-8 years', icon: Star },
+  { label: 'Lead', desc: '8-12 years', icon: Trophy },
+  { label: 'Executive', desc: '12+ years', icon: Crown }
 ]
 
 const SetupStep = ({ config, setConfig, onNext }) => {
@@ -94,7 +94,9 @@ const SetupStep = ({ config, setConfig, onNext }) => {
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <div className="text-lg mb-1">{level.icon}</div>
+                  <div className="mb-2">
+                    <level.icon className={`w-5 h-5 ${config.experience === level.label ? 'text-white' : 'text-[#2563EB]'}`} />
+                  </div>
                   <div className="text-sm font-semibold">{level.label}</div>
                   <div className={`text-[10px] font-mono ${config.experience === level.label ? 'text-white/60' : 'text-[#999]'}`}>
                     {level.desc}

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, SkipForward, StopCircle, Clock, ChevronRight } from 'lucide-react'
+import { Mic, MicOff, SkipForward, StopCircle, Clock, ChevronRight, Info } from 'lucide-react'
 import AIAvatar from '../AIAvatar'
 import Waveform from '../Waveform'
 
@@ -266,8 +266,9 @@ const LiveInterviewStep = ({
                 </div>
               </div>
             </div>
-            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 text-[11px] text-blue-700 leading-relaxed">
-              💡 <strong>Tip:</strong> Speak clearly and look straight into your camera to maintain eye contact scores.
+            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50 text-[11px] text-blue-700 leading-relaxed flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+              <span><strong>Tip:</strong> Speak clearly and look straight into your camera to maintain eye contact scores.</span>
             </div>
           </div>
         </div>
