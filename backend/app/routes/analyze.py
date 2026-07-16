@@ -11,19 +11,34 @@ try:
     import PyPDF2
 except ImportError:
     PyPDF2 = None
-from ..models import (
-    BatchAnalysisRequest, 
-    StudentAnalysisResult,
-    PillarBreakdown,
-    ResumeAnalysisRequest,
-    ResumeAnalysisResponse,
-    InterviewRequest,
-    InterviewResponse
-)
-from ..services.llm_service import UniversalLLMService
-from ..services.gemini_service import get_working_model
-from ..services.vector_service import calculate_cosine_similarity
-from ..services.sentiment_service import analyze_sentiment_valence
+try:
+    from ..models import (
+        BatchAnalysisRequest, 
+        StudentAnalysisResult,
+        PillarBreakdown,
+        ResumeAnalysisRequest,
+        ResumeAnalysisResponse,
+        InterviewRequest,
+        InterviewResponse
+    )
+    from ..services.llm_service import UniversalLLMService
+    from ..services.gemini_service import get_working_model
+    from ..services.vector_service import calculate_cosine_similarity
+    from ..services.sentiment_service import analyze_sentiment_valence
+except (ImportError, ValueError):
+    from models import (
+        BatchAnalysisRequest, 
+        StudentAnalysisResult,
+        PillarBreakdown,
+        ResumeAnalysisRequest,
+        ResumeAnalysisResponse,
+        InterviewRequest,
+        InterviewResponse
+    )
+    from services.llm_service import UniversalLLMService
+    from services.gemini_service import get_working_model
+    from services.vector_service import calculate_cosine_similarity
+    from services.sentiment_service import analyze_sentiment_valence
 import os
 
 router = APIRouter(prefix="/analyze", tags=["analyze"])

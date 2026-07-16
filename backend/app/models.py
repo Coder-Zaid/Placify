@@ -3,7 +3,10 @@ from typing import List, Optional
 from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 import datetime
-from .database import Base
+try:
+    from .database import Base
+except (ImportError, ValueError):
+    from database import Base
 
 # ============================================================================
 # PYDANTIC MODEL SCHEMAS

@@ -9,10 +9,16 @@ import os
 import json
 import logging
 
-from ..services.llm_service import UniversalLLMService
-from ..services.gemini_service import get_working_model
-from ..services.vector_service import calculate_cosine_similarity
-from ..services.sentiment_service import analyze_sentiment_valence
+try:
+    from ..services.llm_service import UniversalLLMService
+    from ..services.gemini_service import get_working_model
+    from ..services.vector_service import calculate_cosine_similarity
+    from ..services.sentiment_service import analyze_sentiment_valence
+except (ImportError, ValueError):
+    from services.llm_service import UniversalLLMService
+    from services.gemini_service import get_working_model
+    from services.vector_service import calculate_cosine_similarity
+    from services.sentiment_service import analyze_sentiment_valence
 
 logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/analyze/interview-studio", tags=["interview-studio"])

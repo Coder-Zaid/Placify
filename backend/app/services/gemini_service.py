@@ -7,7 +7,10 @@ from typing import Tuple, Dict, List, Any
 
 import PyPDF2
 
-from .llm_service import UniversalLLMService
+try:
+    from .llm_service import UniversalLLMService
+except (ImportError, ValueError):
+    from llm_service import UniversalLLMService
 
 logger = logging.getLogger(__name__)
 
