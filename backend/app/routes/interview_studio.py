@@ -128,7 +128,7 @@ def extract_text_from_pdf_base64(pdf_base64_str: str) -> str:
 async def generate_questions(request: QuestionGenerationRequest):
     """Generate interview questions tailored to role, experience, and resume content."""
     try:
-        api_key = request.api_key or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        api_key = request.api_key or os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise HTTPException(status_code=500, detail="No LLM API key configured")
 
@@ -159,13 +159,24 @@ Return valid JSON only, no markdown formatting."""
         
         # Parse JSON from response
         try:
-            # Try to extract JSON array from response
+            # Try to extract JSON array or object from response
             text = response_text.strip()
             if text.startswith("```"):
                 text = text.split("\n", 1)[1] if "\n" in text else text[3:]
                 text = text.rsplit("```", 1)[0] if "```" in text else text
-            questions = json.loads(text.strip())
-            if isinstance(questions, list):
+            
+            data = json.loads(text.strip())
+            questions = None
+            if isinstance(data, list):
+                questions = data
+            elif isinstance(data, dict):
+                # Search dictionary values for a list (e.g. { "questions": [...] })
+                for val in data.values():
+                    if isinstance(val, list):
+                        questions = val
+                        break
+            
+            if questions:
                 return QuestionGenerationResponse(
                     questions=[GeneratedQuestion(**q) for q in questions[:8]]
                 )
@@ -199,7 +210,7 @@ async def transcribe_audio(
             file_obj = ("audio.webm", audio_bytes, "audio/webm")
             transcription = client.audio.transcriptions.create(
                 file=file_obj,
-                model="whisper-large-v3",
+                model="whisper-large-v3-turbo",
                 response_format="json",
                 language="en"
             )
