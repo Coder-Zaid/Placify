@@ -247,14 +247,14 @@ export default function BatchAnalysis({ apiKey, data, updateData, addToast }) {
             <label className="block text-xs font-semibold text-[#6F6F75] uppercase tracking-wider">
               Student CSV File
             </label>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvUpload}
+              className="hidden"
+              id="csv-input"
+            />
             <label htmlFor="csv-input" className="border border-[#0F0F11]/10 rounded-[14px] bg-[#FAFAF8] p-10 text-center hover:border-[#0F0F11] transition cursor-pointer flex flex-col items-center justify-center h-52">
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleCsvUpload}
-                className="hidden"
-                id="csv-input"
-              />
               <div className="space-y-3">
                 <Upload className="mx-auto h-6 w-6 text-[#6F6F75] stroke-[1.5]" />
                 <div>
